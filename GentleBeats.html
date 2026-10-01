@@ -453,10 +453,76 @@
         ];
 
         // --- APPLICATION STATE ---
-        let currentUser = JSON.parse(localStorage.getItem('echobeat_user')) || null;
-        let likedSongIds = JSON.parse(localStorage.getItem('echobeat_liked')) || [1, 4];
-        let offlineSongIds = JSON.parse(localStorage.getItem('echobeat_offline')) || [1, 2];
+        function readStoredJSON(key, fallback) {
+            try {
+                const raw = localStorage.getItem(key);
+                return raw ? JSON.parse(raw) : fallback;
+            } catch (error) {
+                console.warn('Could not read saved data:', key, error);
+                return fallback;
+            }
+        }
+
+        let currentUser = readStoredJSON('echobeat_user', null);
+        let likedSongIds = readStoredJSON('echobeat_liked', [1, 4]);
+        let offlineSongIds = readStoredJSON('echobeat_offline', []);
         let isOfflineMode = false;
+
+        // Real offline audio cache. The original UI only marked tracks as downloaded;
+        // this version actually stores downloaded audio in IndexedDB when the source
+        // permits browser access.
+        const OFFLINE_DB = 'echobeat_offline_db';
+        const OFFLINE_STORE = 'tracks';
+        let offlineDbPromise = null;
+
+        function openOfflineDB() {
+            if (!('indexedDB' in window)) return Promise.reject(new Error('IndexedDB is not supported by this browser.'));
+            if (offlineDbPromise) return offlineDbPromise;
+            offlineDbPromise = new Promise((resolve, reject) => {
+                const request = indexedDB.open(OFFLINE_DB, 1);
+                request.onupgradeneeded = () => {
+                    const db = request.result;
+                    if (!db.objectStoreNames.contains(OFFLINE_STORE)) db.createObjectStore(OFFLINE_STORE);
+                };
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = () => reject(request.error || new Error('Could not open offline storage.'));
+            });
+            return offlineDbPromise;
+        }
+
+        async function saveOfflineTrack(songId, blob) {
+            const db = await openOfflineDB();
+            return new Promise((resolve, reject) => {
+                const tx = db.transaction(OFFLINE_STORE, 'readwrite');
+                tx.objectStore(OFFLINE_STORE).put(blob, String(songId));
+                tx.oncomplete = resolve;
+                tx.onerror = () => reject(tx.error || new Error('Could not save track.'));
+            });
+        }
+
+        async function getOfflineTrack(songId) {
+            const db = await openOfflineDB();
+            return new Promise((resolve, reject) => {
+                const tx = db.transaction(OFFLINE_STORE, 'readonly');
+                const request = tx.objectStore(OFFLINE_STORE).get(String(songId));
+                request.onsuccess = () => resolve(request.result || null);
+                request.onerror = () => reject(request.error || new Error('Could not read offline track.'));
+            });
+        }
+
+        async function deleteOfflineTrack(songId) {
+            try {
+                const db = await openOfflineDB();
+                await new Promise((resolve, reject) => {
+                    const tx = db.transaction(OFFLINE_STORE, 'readwrite');
+                    tx.objectStore(OFFLINE_STORE).delete(String(songId));
+                    tx.oncomplete = resolve;
+                    tx.onerror = () => reject(tx.error);
+                });
+            } catch (error) {
+                console.warn('Could not remove offline file:', error);
+            }
+        }
 
         let currentPlaylist = [...songs];
         let currentIndex = 0;
@@ -480,8 +546,14 @@
 
             audioElement.addEventListener('timeupdate', updateProgress);
             audioElement.addEventListener('ended', handleSongEnded);
+            audioElement.addEventListener('error', () => {
+                isPlaying = false;
+                updatePlayUI();
+                showToast('The audio could not be loaded. Check the connection or use a downloaded track.', 'error');
+            });
 
             initVisualizerCanvas();
+            switchTab('home');
         });
 
         // --- TOAST NOTIFICATION ---
@@ -605,17 +677,12 @@
         // --- NETWORK & OFFLINE MODE ---
         function toggleOfflineMode() {
             isOfflineMode = !isOfflineMode;
-            const dot = document.getElementById('network-dot');
-            const text = document.getElementById('network-text');
-            if (isOfflineMode) {
-                dot.className = "w-2.5 h-2.5 rounded-full bg-sky-400 animate-pulse";
-                text.innerText = "Offline Mode (Simulated)";
-                showToast("Switched to Offline Mode. Only downloaded tracks can be played.", "error");
-            } else {
-                dot.className = "w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse";
-                text.innerText = "Online Mode";
-                showToast("Back online! Streaming available.");
-            }
+            updateNetworkUI();
+            showToast(
+                isOfflineMode
+                    ? 'Offline Mode: only downloaded tracks can play.'
+                    : 'Online Mode: streaming is available.'
+            );
         }
 
         // --- RENDER SONG LISTS ---
@@ -707,8 +774,11 @@
             document.querySelectorAll('.ai-filter-btn').forEach(btn => {
                 btn.className = "ai-filter-btn px-4 py-2 rounded-full bg-zinc-800 text-zinc-300 hover:text-white text-xs font-semibold transition";
             });
-            event?.target?.classList?.remove('bg-zinc-800', 'text-zinc-300');
-            event?.target?.classList?.add('bg-emerald-500', 'text-black');
+            const activeButton = Array.from(document.querySelectorAll('.ai-filter-btn')).find(btn => btn.textContent.toLowerCase().includes(genre.toLowerCase()));
+            if (activeButton) {
+                activeButton.classList.remove('bg-zinc-800', 'text-zinc-300');
+                activeButton.classList.add('bg-emerald-500', 'text-black');
+            }
 
             const filtered = genre === 'All' ? [...songs].sort(() => 0.5 - Math.random()) : songs.filter(s => s.genre === genre);
             renderSongListHtml(filtered, 'ai-recommendations-list');
@@ -756,50 +826,96 @@
             playPlaylist(list);
         }
 
-        function playOfflineSongs() {
+        async function playOfflineSongs() {
             const list = songs.filter(s => offlineSongIds.includes(s.id));
-            if (list.length === 0) { showToast("No offline songs downloaded.", "error"); return; }
+            if (list.length === 0) { showToast('No offline songs downloaded.', 'error'); return; }
+            isOfflineMode = true;
+            updateNetworkUI();
             playPlaylist(list);
         }
 
-        function startAudioPlayback(song) {
-            audioElement.src = song.audioUrl;
-            audioElement.play().then(() => {
-                isPlaying = true;
-                updatePlayUI();
-            }).catch(e => {
-                console.warn("Audio autoplay simulated fallback", e);
-                isPlaying = true;
-                updatePlayUI();
-            });
-
-            document.getElementById('player-title').innerText = song.title;
-            document.getElementById('player-artist').innerText = song.artist;
-            document.getElementById('player-cover').src = song.cover;
-            document.getElementById('total-duration').innerText = `${Math.floor(song.duration / 60)}:${(song.duration % 60).toString().padStart(2, '0')}`;
-
-            document.getElementById('vis-title').innerText = song.title;
-            document.getElementById('vis-artist').innerText = song.artist;
-            document.getElementById('vis-cover').src = song.cover;
-
-            const likeBtn = document.getElementById('player-like-btn');
-            if (likedSongIds.includes(song.id)) {
-                likeBtn.innerHTML = `<i class="fa-solid fa-heart text-rose-500"></i>`;
+        function updateNetworkUI() {
+            const dot = document.getElementById('network-dot');
+            const text = document.getElementById('network-text');
+            if (isOfflineMode) {
+                dot.className = 'w-2.5 h-2.5 rounded-full bg-sky-400 animate-pulse';
+                text.innerText = 'Offline Mode';
             } else {
-                likeBtn.innerHTML = `<i class="fa-regular fa-heart"></i>`;
+                dot.className = 'w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse';
+                text.innerText = 'Online Mode';
             }
         }
 
-        function togglePlay() {
-            if (!currentPlaylist.length) { playSong(songs[0].id); return; }
+        async function resolveAudioSource(song) {
+            if (isOfflineMode) {
+                const cached = await getOfflineTrack(song.id);
+                if (!cached) throw new Error('This track has not been downloaded for offline playback.');
+                return { url: URL.createObjectURL(cached), revoke: true };
+            }
+            return { url: song.audioUrl, revoke: false };
+        }
+
+        let activeObjectUrl = null;
+
+        async function startAudioPlayback(song) {
+            if (!song) return;
+            try {
+                if (activeObjectUrl) {
+                    URL.revokeObjectURL(activeObjectUrl);
+                    activeObjectUrl = null;
+                }
+
+                const source = await resolveAudioSource(song);
+                if (source.revoke) activeObjectUrl = source.url;
+
+                audioElement.pause();
+                audioElement.src = source.url;
+                audioElement.load();
+
+                document.getElementById('player-title').innerText = song.title;
+                document.getElementById('player-artist').innerText = song.artist;
+                document.getElementById('player-cover').src = song.cover;
+                document.getElementById('total-duration').innerText = `${Math.floor(song.duration / 60)}:${(song.duration % 60).toString().padStart(2, '0')}`;
+                document.getElementById('current-time').innerText = '0:00';
+                document.getElementById('progress-bar').style.width = '0%';
+
+                document.getElementById('vis-title').innerText = song.title;
+                document.getElementById('vis-artist').innerText = song.artist;
+                document.getElementById('vis-cover').src = song.cover;
+
+                const likeBtn = document.getElementById('player-like-btn');
+                likeBtn.innerHTML = likedSongIds.includes(song.id)
+                    ? `<i class="fa-solid fa-heart text-rose-500"></i>`
+                    : `<i class="fa-regular fa-heart"></i>`;
+
+                await audioElement.play();
+                isPlaying = true;
+                updatePlayUI();
+            } catch (error) {
+                isPlaying = false;
+                updatePlayUI();
+                console.error('Playback error:', error);
+                showToast(error.message || 'Unable to play this track. Check your internet connection.', 'error');
+            }
+        }
+
+        async function togglePlay() {
+            if (!currentPlaylist.length) { await playSong(songs[0].id); return; }
             if (isPlaying) {
                 audioElement.pause();
                 isPlaying = false;
-            } else {
-                audioElement.play().catch(() => {});
-                isPlaying = true;
+                updatePlayUI();
+                return;
             }
-            updatePlayUI();
+            try {
+                await audioElement.play();
+                isPlaying = true;
+                updatePlayUI();
+            } catch (error) {
+                isPlaying = false;
+                updatePlayUI();
+                showToast('Playback could not start. Check your connection or download the track first.', 'error');
+            }
         }
 
         function updatePlayUI() {
@@ -891,13 +1007,28 @@
             }
         }
 
-        function toggleDownload(id) {
+        async function toggleDownload(id) {
+            const song = songs.find(s => s.id === id);
+            if (!song) return;
+
             if (offlineSongIds.includes(id)) {
+                await deleteOfflineTrack(id);
                 offlineSongIds = offlineSongIds.filter(i => i !== id);
-                showToast("Removed from Offline Storage", "error");
+                showToast('Removed from Offline Storage', 'error');
             } else {
-                offlineSongIds.push(id);
-                showToast("Downloaded successfully for offline playback!");
+                try {
+                    showToast('Downloading track...');
+                    const response = await fetch(song.audioUrl, { mode: 'cors' });
+                    if (!response.ok) throw new Error(`Download failed (${response.status})`);
+                    const blob = await response.blob();
+                    if (!blob.size) throw new Error('The downloaded file was empty.');
+                    await saveOfflineTrack(id, blob);
+                    offlineSongIds.push(id);
+                    showToast('Downloaded successfully for offline playback!');
+                } catch (error) {
+                    console.error('Offline download error:', error);
+                    showToast('Download failed. The music server may block browser downloads; try streaming online instead.', 'error');
+                }
             }
             localStorage.setItem('echobeat_offline', JSON.stringify(offlineSongIds));
             renderOfflineSongs();
@@ -978,7 +1109,7 @@
             {
                 title: "Your 2026 Badge",
                 subtitle: "Ready to share with friends!",
-                content: `<div class="bg-zinc-900 border border-emerald-500/30 p-6 rounded-2xl text-center space-y-3 shadow-2xl"><div class="flex items-center justify-center space-x-2 text-emerald-400"><i class="fa-solid fa-waveform"></i><span class="font-bold text-sm">GentleBeats Wrap 2026</span></div><h3 class="text-xl font-black text-white">ELITE AUDIOPHILE</h3><p class="text-[11px] text-zinc-400">Top 1% Global Listener • 482 Hours • 86 Artists</p><button onclick="showToast('Wrap summary copied to clipboard!')" class="mt-2 bg-emerald-500 hover:bg-emerald-400 text-black text-xs font-bold px-4 py-2 rounded-full transition w-full">Share Card 🎉</button></div>`
+                content: `<div class="bg-zinc-900 border border-emerald-500/30 p-6 rounded-2xl text-center space-y-3 shadow-2xl"><div class="flex items-center justify-center space-x-2 text-emerald-400"><i class="fa-solid fa-waveform"></i><span class="font-bold text-sm">GentleBeats Wrap 2026</span></div><h3 class="text-xl font-black text-white">ELITE AUDIOPHILE</h3><p class="text-[11px] text-zinc-400">Top 1% Global Listener • 482 Hours • 86 Artists</p><button onclick="navigator.clipboard?.writeText('GentleBeats Wrap 2026 — Elite Audiophile').then(() => showToast('Wrap summary copied to clipboard!')).catch(() => showToast('Copy is unavailable in this browser.', 'error'))" class="mt-2 bg-emerald-500 hover:bg-emerald-400 text-black text-xs font-bold px-4 py-2 rounded-full transition w-full">Share Card 🎉</button></div>`
             }
         ];
 
