@@ -1,1205 +1,989 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GentleBeats - Stream & Offline Music</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        brand: {
-                            50: '#f0fdf4',
-                            500: '#10b981',
-                            600: '#059669',
-                            700: '#047857',
-                        }
-                    }
-                }
+    <title>GentleGiant Music</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            background: #0b0b0f;
+            color: white;
+            min-height: 100vh;
+        }
+
+        header {
+            height: 70px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 35px;
+            background: #111117;
+            border-bottom: 1px solid #272731;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .logo span {
+            color: #1db954;
+        }
+
+        .search {
+            width: 420px;
+            background: #22222b;
+            border: none;
+            outline: none;
+            border-radius: 30px;
+            padding: 13px 20px;
+            color: white;
+            font-size: 15px;
+        }
+
+        main {
+            padding: 35px;
+            padding-bottom: 160px;
+        }
+
+        h1 {
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #999;
+            margin-bottom: 30px;
+        }
+
+        .results {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+            gap: 22px;
+        }
+
+        .song {
+            background: #15151c;
+            border-radius: 12px;
+            overflow: hidden;
+            transition: .2s;
+            cursor: pointer;
+        }
+
+        .song:hover {
+            transform: translateY(-4px);
+            background: #1d1d26;
+        }
+
+        .thumbnail {
+            width: 100%;
+            aspect-ratio: 16 / 9;
+            object-fit: cover;
+        }
+
+        .song-info {
+            padding: 15px;
+        }
+
+        .song-title {
+            font-weight: bold;
+            margin-bottom: 7px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .artist {
+            color: #999;
+            font-size: 14px;
+            margin-bottom: 14px;
+        }
+
+        .buttons {
+            display: flex;
+            gap: 7px;
+        }
+
+        button {
+            border: none;
+            cursor: pointer;
+        }
+
+        .play-btn {
+            background: #1db954;
+            color: black;
+            padding: 8px 14px;
+            border-radius: 20px;
+            font-weight: bold;
+        }
+
+        .lyrics-btn,
+        .video-btn {
+            background: #292932;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 20px;
+        }
+
+        .player {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 125px;
+            background: #121217;
+            border-top: 1px solid #292932;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            padding: 15px 25px;
+            z-index: 20;
+        }
+
+        .now-playing {
+            width: 250px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .now-playing img {
+            width: 65px;
+            height: 65px;
+            object-fit: cover;
+            border-radius: 6px;
+        }
+
+        .now-title {
+            font-weight: bold;
+        }
+
+        .now-artist {
+            color: #999;
+            font-size: 13px;
+            margin-top: 5px;
+        }
+
+        .controls {
+            display: flex;
+            align-items: center;
+            gap: 18px;
+        }
+
+        .control {
+            background: transparent;
+            color: white;
+            font-size: 24px;
+        }
+
+        .main-play {
+            background: white;
+            color: black;
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            font-size: 20px;
+        }
+
+        .progress-container {
+            flex: 1;
+        }
+
+        .progress {
+            width: 100%;
+            accent-color: #1db954;
+            cursor: pointer;
+        }
+
+        .time {
+            display: flex;
+            justify-content: space-between;
+            color: #888;
+            font-size: 12px;
+        }
+
+        #youtube-player {
+            display: none;
+        }
+
+        .empty {
+            color: #777;
+            text-align: center;
+            margin-top: 60px;
+            grid-column: 1 / -1;
+        }
+
+        @media(max-width: 800px) {
+            .search {
+                width: 250px;
+            }
+
+            .now-playing {
+                width: 180px;
             }
         }
-    </script>
-    <style>
-        body { font-family: 'Inter', sans-serif; }
-        /* Custom scrollbar */
-        ::-webkit-scrollbar { width: 8px; height: 8px; }
-        ::-webkit-scrollbar-track { background: #121212; }
-        ::-webkit-scrollbar-thumb { background: #282828; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #3e3e3e; }
-        .glass-panel { background: rgba(24, 24, 27, 0.75); backdrop-filter: blur(12px); }
     </style>
 </head>
-<body class="bg-[#09090b] text-zinc-100 h-screen overflow-hidden flex flex-col select-none">
 
-    <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col space-y-2 pointer-events-none"></div>
+<body>
 
-    <div class="flex flex-1 overflow-hidden">
-        
-        <!-- SIDEBAR NAVIGATION -->
-        <aside id="sidebar" class="w-64 bg-black flex flex-col border-r border-zinc-800/80 z-20 transition-all duration-300">
-            <!-- Brand Logo -->
-            <div class="p-6 flex items-center justify-between">
-                <div class="flex items-center space-x-3 cursor-pointer" onclick="switchTab('home')">
-                    <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center shadow-lg shadow-emerald-500/20">
-                        <i class="fa-solid fa-waveform text-black text-lg"></i>
-                    </div>
-                    <span class="text-xl font-bold tracking-tight bg-gradient-to-r from-white via-zinc-200 to-zinc-400 bg-clip-text text-transparent">GentleBeats</span>
-                </div>
-            </div>
-
-            <!-- Navigation Links -->
-            <nav class="px-3 space-y-1 flex-1 overflow-y-auto">
-                <p class="px-3 pb-2 text-xs font-semibold text-zinc-500 uppercase tracking-wider">Discover</p>
-                <button onclick="switchTab('home')" class="nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all text-zinc-400 hover:text-white hover:bg-zinc-900" data-tab="home">
-                    <i class="fa-solid fa-house w-5"></i><span>Home</span>
-                </button>
-                <button onclick="switchTab('search')" class="nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all text-zinc-400 hover:text-white hover:bg-zinc-900" data-tab="search">
-                    <i class="fa-solid fa-magnifying-glass w-5"></i><span>Search</span>
-                </button>
-                <button onclick="switchTab('recommendations')" class="nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all text-zinc-400 hover:text-white hover:bg-zinc-900" data-tab="recommendations">
-                    <i class="fa-solid fa-wand-magic-sparkles w-5 text-emerald-400"></i><span>AI Vibe Mix</span>
-                </button>
-
-                <p class="px-3 pt-6 pb-2 text-xs font-semibold text-zinc-500 uppercase tracking-wider">Library</p>
-                <button onclick="switchTab('library')" class="nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all text-zinc-400 hover:text-white hover:bg-zinc-900" data-tab="library">
-                    <i class="fa-solid fa-heart w-5 text-rose-500"></i><span>Liked Songs</span>
-                </button>
-                <button onclick="switchTab('offline')" class="nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all text-zinc-400 hover:text-white hover:bg-zinc-900" data-tab="offline">
-                    <i class="fa-solid fa-download w-5 text-sky-400"></i><span>Downloaded (Offline)</span>
-                </button>
-                <button onclick="openWrapModal()" class="w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all text-emerald-400 hover:bg-emerald-500/10 border border-emerald-500/20 mt-4">
-                    <i class="fa-solid fa-gift w-5"></i><span>Yearly Wrap 2026 🎉</span>
-                </button>
-            </nav>
-
-            <!-- Network Status & User Mini Profile -->
-            <div class="p-4 border-t border-zinc-800 bg-zinc-950/50 flex flex-col space-y-3">
-                <div class="flex items-center justify-between bg-zinc-900/80 px-3 py-2 rounded-lg border border-zinc-800">
-                    <div class="flex items-center space-x-2">
-                        <span id="network-dot" class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                        <span id="network-text" class="text-xs font-medium text-zinc-300">Online Mode</span>
-                    </div>
-                    <button onclick="toggleOfflineMode()" class="text-[10px] bg-zinc-800 hover:bg-zinc-700 text-zinc-300 px-2 py-1 rounded transition">Toggle</button>
-                </div>
-                
-                <div id="sidebar-user-section" class="flex items-center justify-between pt-1">
-                    <div class="flex items-center space-x-3 overflow-hidden cursor-pointer" onclick="openProfileModal()">
-                        <img id="sidebar-user-avatar" src="https://placehold.co/100x100/10b981/ffffff?text=U" class="w-9 h-9 rounded-full object-cover border border-emerald-500/30">
-                        <div class="truncate">
-                            <p id="sidebar-user-name" class="text-xs font-semibold truncate text-zinc-200">Guest User</p>
-                            <p class="text-[10px] text-zinc-500 truncate">Free Plan</p>
-                        </div>
-                    </div>
-                    <button onclick="openAuthModal()" id="auth-action-btn" class="text-xs bg-emerald-600 hover:bg-emerald-500 text-white font-medium px-3 py-1.5 rounded-lg transition shadow-sm">Login</button>
-                </div>
-            </div>
-        </aside>
-
-        <main class="flex-1 flex flex-col bg-[#121212] overflow-y-auto relative">
-            
-            <!-- Top Header bar -->
-            <header class="sticky top-0 z-10 glass-panel border-b border-zinc-800/80 px-6 py-4 flex items-center justify-between">
-                <div class="flex items-center space-x-4">
-                    <button onclick="window.history.back()" class="w-8 h-8 rounded-full bg-zinc-800/80 hover:bg-zinc-700 flex items-center justify-center text-zinc-300 transition"><i class="fa-solid fa-chevron-left text-xs"></i></button>
-                    <button onclick="window.history.forward()" class="w-8 h-8 rounded-full bg-zinc-800/80 hover:bg-zinc-700 flex items-center justify-center text-zinc-300 transition"><i class="fa-solid fa-chevron-right text-xs"></i></button>
-                    <h2 id="header-title" class="text-lg font-bold tracking-tight text-white">Discover Music</h2>
-                </div>
-                <div class="flex items-center space-x-3">
-                    <button onclick="openWrapModal()" class="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-black font-semibold text-xs px-4 py-2 rounded-full shadow-lg shadow-emerald-500/20 flex items-center space-x-2 transition">
-                        <i class="fa-solid fa-sparkles"></i>
-                        <span>View Wrap 2026</span>
-                    </button>
-                </div>
-            </header>
-
-            <!-- TAB CONTAINER -->
-            <div class="flex-1 p-6 md:p-8 pb-32">
-                
-                <!-- HOME TAB -->
-                <div id="tab-home" class="tab-content space-y-8">
-                    <!-- Hero Banner -->
-                    <div class="relative rounded-2xl overflow-hidden bg-gradient-to-r from-emerald-900/60 via-teal-900/40 to-zinc-900 p-8 border border-emerald-500/20 flex flex-col md:flex-row items-center justify-between shadow-2xl">
-                        <div class="space-y-4 max-w-xl z-10 mb-6 md:mb-0">
-                            <span class="bg-emerald-500/20 text-emerald-400 text-xs font-semibold px-3 py-1 rounded-full uppercase tracking-wider border border-emerald-500/30">Featured Playlist</span>
-                            <h1 class="text-3xl md:text-5xl font-extrabold tracking-tight text-white">Global Top Hits & AI Chill</h1>
-                            <p class="text-zinc-300 text-sm md:text-base leading-relaxed">Experience zero interruption music streaming with instant offline downloading, smart mood recommendations, and custom visualizations.</p>
-                            <div class="flex items-center space-x-4 pt-2">
-                                <button onclick="playPlaylist(songs)" class="bg-emerald-500 hover:bg-emerald-400 text-black font-bold px-6 py-3 rounded-full flex items-center space-x-2 shadow-lg shadow-emerald-500/30 transition transform hover:scale-105">
-                                    <i class="fa-solid fa-play"></i><span>Play All</span>
-                                </button>
-                                <button onclick="switchTab('recommendations')" class="bg-zinc-800/80 hover:bg-zinc-700 text-white font-medium px-6 py-3 rounded-full border border-zinc-700 transition">Explore Vibe AI</button>
-                            </div>
-                        </div>
-                        <div class="relative w-48 h-48 md:w-64 md:h-64 rounded-xl overflow-hidden shadow-2xl flex-shrink-0 group">
-                            <img src="https://placehold.co/400x400/047857/ffffff?text=GentleBeats+2026" class="w-full h-full object-cover group-hover:scale-110 transition duration-500">
-                            <div class="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
-                                <button onclick="playSong(songs[0].id)" class="w-14 h-14 rounded-full bg-emerald-500 text-black flex items-center justify-center shadow-xl transform scale-90 group-hover:scale-100 transition"><i class="fa-solid fa-play text-lg ml-1"></i></button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Trending Songs Grid -->
-                    <div class="space-y-4">
-                        <div class="flex items-center justify-between">
-                            <h3 class="text-xl font-bold tracking-tight">Trending Right Now</h3>
-                            <button onclick="switchTab('search')" class="text-xs font-semibold text-zinc-400 hover:text-white transition">See All</button>
-                        </div>
-                        <div id="trending-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                            <!-- Populated via JS -->
-                        </div>
-                    </div>
-
-                    <!-- Quick Vibe Selector -->
-                    <div class="space-y-4">
-                        <h3 class="text-xl font-bold tracking-tight">Quick Vibe Moods</h3>
-                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                            <div onclick="selectMood('Chill')" class="bg-gradient-to-br from-indigo-900/50 to-purple-900/30 p-5 rounded-xl border border-indigo-500/20 cursor-pointer hover:border-indigo-500/50 transition group">
-                                <i class="fa-solid fa-mug-hot text-2xl text-indigo-400 mb-3 group-hover:scale-110 transition"></i>
-                                <h4 class="font-bold text-lg">Chill & Relax</h4>
-                                <p class="text-xs text-zinc-400 mt-1">Lo-fi beats, ambient acoustic</p>
-                            </div>
-                            <div onclick="selectMood('Workout')" class="bg-gradient-to-br from-amber-900/50 to-orange-900/30 p-5 rounded-xl border border-amber-500/20 cursor-pointer hover:border-amber-500/50 transition group">
-                                <i class="fa-solid fa-bolt text-2xl text-amber-400 mb-3 group-hover:scale-110 transition"></i>
-                                <h4 class="font-bold text-lg">Workout Energy</h4>
-                                <p class="text-xs text-zinc-400 mt-1">High BPM electronic, gym trap</p>
-                            </div>
-                            <div onclick="selectMood('Focus')" class="bg-gradient-to-br from-sky-900/50 to-blue-900/30 p-5 rounded-xl border border-sky-500/20 cursor-pointer hover:border-sky-500/50 transition group">
-                                <i class="fa-solid fa-brain text-2xl text-sky-400 mb-3 group-hover:scale-110 transition"></i>
-                                <h4 class="font-bold text-lg">Deep Focus</h4>
-                                <p class="text-xs text-zinc-400 mt-1">Minimalist piano, synthwave</p>
-                            </div>
-                            <div onclick="selectMood('Party')" class="bg-gradient-to-br from-rose-900/50 to-pink-900/30 p-5 rounded-xl border border-rose-500/20 cursor-pointer hover:border-rose-500/50 transition group">
-                                <i class="fa-solid fa-champagne-glasses text-2xl text-rose-400 mb-3 group-hover:scale-110 transition"></i>
-                                <h4 class="font-bold text-lg">Party Night</h4>
-                                <p class="text-xs text-zinc-400 mt-1">Dance pop, club anthems</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- SEARCH TAB -->
-                <div id="tab-search" class="tab-content hidden space-y-6">
-                    <div class="max-w-2xl relative">
-                        <i class="fa-solid fa-magnifying-glass absolute left-4 top-3.5 text-zinc-400"></i>
-                        <input type="text" id="search-input" oninput="handleSearch(this.value)" placeholder="Search songs, artists, or genres..." class="w-full bg-zinc-900 border border-zinc-800 rounded-full pl-12 pr-4 py-3 text-sm text-white focus:outline-none focus:border-emerald-500 transition shadow-inner">
-                    </div>
-                    <div class="space-y-3">
-                        <h3 class="text-lg font-bold">Search Results</h3>
-                        <div id="search-results-list" class="space-y-2">
-                            <!-- Populated via JS -->
-                        </div>
-                    </div>
-                </div>
-
-                <!-- RECOMMENDATIONS / AI VIBE MIX TAB -->
-                <div id="tab-recommendations" class="tab-content hidden space-y-6">
-                    <div class="glass-panel p-6 rounded-2xl border border-emerald-500/20 space-y-4">
-                        <div class="flex items-center space-x-3">
-                            <div class="w-10 h-10 rounded-xl bg-emerald-500/20 flex items-center justify-center text-emerald-400">
-                                <i class="fa-solid fa-wand-magic-sparkles text-xl"></i>
-                            </div>
-                            <div>
-                                <h2 class="text-xl font-bold">GentleBeats AI Recommendation Engine</h2>
-                                <p class="text-xs text-zinc-400">Personalized playlists generated using your listening telemetry and selected mood.</p>
-                            </div>
-                        </div>
-                        <div class="flex flex-wrap gap-2 pt-2">
-                            <button onclick="generateAIMix('All')" class="ai-filter-btn px-4 py-2 rounded-full bg-emerald-500 text-black text-xs font-semibold transition">Smart All-Mix</button>
-                            <button onclick="generateAIMix('Chill')" class="ai-filter-btn px-4 py-2 rounded-full bg-zinc-800 text-zinc-300 hover:text-white text-xs font-semibold transition">Chill Vibes</button>
-                            <button onclick="generateAIMix('Workout')" class="ai-filter-btn px-4 py-2 rounded-full bg-zinc-800 text-zinc-300 hover:text-white text-xs font-semibold transition">Workout Boost</button>
-                            <button onclick="generateAIMix('Focus')" class="ai-filter-btn px-4 py-2 rounded-full bg-zinc-800 text-zinc-300 hover:text-white text-xs font-semibold transition">Deep Focus</button>
-                        </div>
-                    </div>
-                    <div id="ai-recommendations-list" class="space-y-2">
-                        <!-- Populated via JS -->
-                    </div>
-                </div>
-
-                <!-- LIKED SONGS TAB -->
-                <div id="tab-library" class="tab-content hidden space-y-6">
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center space-x-4">
-                            <div class="w-16 h-16 rounded-xl bg-gradient-to-br from-rose-600 to-pink-500 flex items-center justify-center text-white shadow-lg">
-                                <i class="fa-solid fa-heart text-3xl"></i>
-                            </div>
-                            <div>
-                                <h2 class="text-2xl font-bold">Liked Songs</h2>
-                                <p id="liked-count" class="text-xs text-zinc-400">0 songs in your library</p>
-                            </div>
-                        </div>
-                        <button onclick="playLikedSongs()" class="bg-rose-500 hover:bg-rose-400 text-white font-bold px-5 py-2.5 rounded-full text-sm shadow-lg shadow-rose-500/20 transition flex items-center space-x-2">
-                            <i class="fa-solid fa-play"></i><span>Play Liked</span>
-                        </button>
-                    </div>
-                    <div id="liked-songs-list" class="space-y-2">
-                        <!-- Populated via JS -->
-                    </div>
-                </div>
-
-                <!-- OFFLINE DOWNLOADED TAB -->
-                <div id="tab-offline" class="tab-content hidden space-y-6">
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center space-x-4">
-                            <div class="w-16 h-16 rounded-xl bg-gradient-to-br from-sky-600 to-blue-500 flex items-center justify-center text-white shadow-lg">
-                                <i class="fa-solid fa-download text-3xl"></i>
-                            </div>
-                            <div>
-                                <h2 class="text-2xl font-bold">Offline Library</h2>
-                                <p id="offline-count" class="text-xs text-zinc-400">0 tracks downloaded for offline playback</p>
-                            </div>
-                        </div>
-                        <button onclick="playOfflineSongs()" class="bg-sky-500 hover:bg-sky-400 text-white font-bold px-5 py-2.5 rounded-full text-sm shadow-lg shadow-sky-500/20 transition flex items-center space-x-2">
-                            <i class="fa-solid fa-play"></i><span>Play Offline</span>
-                        </button>
-                    </div>
-                    <div class="bg-sky-500/10 border border-sky-500/20 p-4 rounded-xl text-xs text-sky-300 flex items-center space-x-3">
-                        <i class="fa-solid fa-circle-info text-base"></i>
-                        <span>Downloaded tracks are stored locally in your browser storage (localStorage / IndexedDB simulation). You can play them even when toggled to Offline Mode!</span>
-                    </div>
-                    <div id="offline-songs-list" class="space-y-2">
-                        <!-- Populated via JS -->
-                    </div>
-                </div>
-
-            </div>
-        </main>
+<header>
+    <div class="logo">
+        GG<span>Music</span>
     </div>
 
-    <footer class="h-24 bg-black border-t border-zinc-800/80 fixed bottom-0 left-0 right-0 z-30 px-4 flex items-center justify-between">
-        
-        <!-- Currently Playing Track Info -->
-        <div class="flex items-center space-x-4 w-1/4 min-w-[200px]">
-            <img id="player-cover" src="https://placehold.co/100x100/18181b/ffffff?text=Echo" class="w-14 h-14 rounded-lg object-cover shadow-md">
-            <div class="truncate">
-                <h4 id="player-title" class="text-sm font-semibold truncate text-zinc-100">Select a Track</h4>
-                <p id="player-artist" class="text-xs text-zinc-400 truncate">GentleBeats Artist</p>
+    <input
+        id="search"
+        class="search"
+        placeholder="Search songs, artists..."
+        autocomplete="off"
+    >
+</header>
+
+<main>
+    <h1>Discover Music</h1>
+    <p class="subtitle">
+        Search real music videos and play them directly in the app.
+    </p>
+
+    <div id="results" class="results"></div>
+</main>
+
+<div id="youtube-player"></div>
+
+<div class="player">
+
+    <div class="now-playing">
+
+        <img id="now-image"
+             src="https://i.ytimg.com/vi/8ekJMC8OtGU/hqdefault.jpg">
+
+        <div>
+            <div id="now-title" class="now-title">
+                Select a song
             </div>
-            <button onclick="toggleLikeCurrent()" id="player-like-btn" class="text-zinc-400 hover:text-rose-500 transition text-lg px-2"><i class="fa-regular fa-heart"></i></button>
+
+            <div id="now-artist" class="now-artist">
+                Nothing playing
+            </div>
         </div>
 
-        <!-- Player Controls & Progress -->
-        <div class="flex flex-col items-center space-y-2 w-2/4 max-w-xl">
-            <div class="flex items-center space-x-6">
-                <button onclick="toggleShuffle()" id="player-shuffle-btn" class="text-zinc-400 hover:text-white transition text-sm"><i class="fa-solid fa-shuffle"></i></button>
-                <button onclick="playPrev()" class="text-zinc-300 hover:text-white transition text-base"><i class="fa-solid fa-backward-step"></i></button>
-                <button onclick="togglePlay()" id="player-play-btn" class="w-10 h-10 rounded-full bg-white text-black hover:scale-105 transition flex items-center justify-center shadow-lg"><i class="fa-solid fa-play ml-0.5"></i></button>
-                <button onclick="playNext()" class="text-zinc-300 hover:text-white transition text-base"><i class="fa-solid fa-forward-step"></i></button>
-                <button onclick="toggleRepeat()" id="player-repeat-btn" class="text-zinc-400 hover:text-white transition text-sm"><i class="fa-solid fa-repeat"></i></button>
-            </div>
-            <div class="flex items-center space-x-3 w-full">
-                <span id="current-time" class="text-[10px] text-zinc-500 w-8 text-right">0:00</span>
-                <div class="flex-1 bg-zinc-800 h-1.5 rounded-full cursor-pointer relative overflow-hidden group" onclick="seekTrack(event)">
-                    <div id="progress-bar" class="bg-emerald-500 h-full w-0 transition-all"></div>
-                </div>
-                <span id="total-duration" class="text-[10px] text-zinc-500 w-8">0:00</span>
-            </div>
-        </div>
-
-        <!-- Extra Controls / Audio Visualizer Modal Toggle / Volume -->
-        <div class="flex items-center justify-end space-x-4 w-1/4 min-w-[200px]">
-            <button onclick="openVisualizerModal()" class="text-xs bg-zinc-900 hover:bg-zinc-800 text-emerald-400 border border-emerald-500/20 px-3 py-1.5 rounded-lg transition flex items-center space-x-1.5">
-                <i class="fa-solid fa-chart-simple"></i><span>Visualizer</span>
-            </button>
-            <div class="hidden sm:flex items-center space-x-2">
-                <i class="fa-solid fa-volume-high text-zinc-400 text-xs"></i>
-                <input type="range" min="0" max="100" value="80" oninput="setVolume(this.value)" class="w-20 accent-emerald-500 h-1 bg-zinc-800 rounded-lg cursor-pointer">
-            </div>
-        </div>
-    </footer>
-
-
-    <!-- AUTH MODAL (Register/Login) -->
-    <div id="auth-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-zinc-900 border border-zinc-800 w-full max-w-md rounded-2xl p-6 relative shadow-2xl space-y-6">
-            <button onclick="closeAuthModal()" class="absolute top-4 right-4 text-zinc-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
-            <div class="text-center space-y-2">
-                <div class="w-12 h-12 rounded-2xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto text-xl font-bold">
-                    <i class="fa-solid fa-waveform"></i>
-                </div>
-                <h3 id="auth-modal-title" class="text-xl font-bold">Welcome to GentleBeats</h3>
-                <p class="text-xs text-zinc-400">Stream millions of tracks online & offline</p>
-            </div>
-            
-            <div class="flex rounded-lg bg-zinc-950 p-1 border border-zinc-800">
-                <button onclick="switchAuthMode('login')" id="auth-tab-login" class="flex-1 py-2 text-xs font-semibold rounded-md bg-zinc-800 text-white transition">Login</button>
-                <button onclick="switchAuthMode('register')" id="auth-tab-register" class="flex-1 py-2 text-xs font-semibold rounded-md text-zinc-400 hover:text-white transition">Register</button>
-            </div>
-
-            <form id="auth-form" onsubmit="handleAuthSubmit(event)" class="space-y-4">
-                <div id="register-fields" class="space-y-4 hidden">
-                    <div>
-                        <label class="block text-xs font-medium text-zinc-400 mb-1">Full Name</label>
-                        <input type="text" id="auth-name" placeholder="Alex Morgan" class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500">
-                    </div>
-                </div>
-                <div>
-                    <label class="block text-xs font-medium text-zinc-400 mb-1">Email Address</label>
-                    <input type="email" id="auth-email" required placeholder="alex@gentlebeats.com" class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500">
-                </div>
-                <div>
-                    <label class="block text-xs font-medium text-zinc-400 mb-1">Password</label>
-                    <input type="password" id="auth-password" required placeholder="••••••••" class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500">
-                </div>
-                <button type="submit" id="auth-submit-btn" class="w-full bg-emerald-500 hover:bg-emerald-400 text-black font-bold py-2.5 rounded-lg text-sm transition shadow-lg shadow-emerald-500/20">Login to Account</button>
-            </form>
-        </div>
     </div>
 
-    <!-- PROFILE MODAL -->
-    <div id="profile-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-zinc-900 border border-zinc-800 w-full max-w-md rounded-2xl p-6 relative shadow-2xl space-y-6 text-center">
-            <button onclick="closeProfileModal()" class="absolute top-4 right-4 text-zinc-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
-            <div class="relative w-24 h-24 mx-auto">
-                <img id="profile-avatar" src="https://placehold.co/200x200/10b981/ffffff?text=U" class="w-24 h-24 rounded-full object-cover border-2 border-emerald-500 shadow-xl">
-            </div>
-            <div>
-                <h3 id="profile-name" class="text-xl font-bold">Guest User</h3>
-                <p id="profile-email" class="text-xs text-zinc-400 mt-1">guest@gentlebeats.com</p>
-                <span class="inline-block mt-3 bg-emerald-500/20 text-emerald-400 text-xs px-3 py-1 rounded-full font-semibold border border-emerald-500/30">Premium Member</span>
-            </div>
-            <div class="grid grid-cols-3 gap-3 pt-2 border-t border-zinc-800 text-center">
-                <div class="bg-zinc-950 p-3 rounded-xl border border-zinc-800">
-                    <p id="stat-listened-hours" class="text-lg font-bold text-emerald-400">42h</p>
-                    <p class="text-[10px] text-zinc-500">Listening Time</p>
-                </div>
-                <div class="bg-zinc-950 p-3 rounded-xl border border-zinc-800">
-                    <p id="stat-liked-count" class="text-lg font-bold text-rose-500">0</p>
-                    <p class="text-[10px] text-zinc-500">Liked Songs</p>
-                </div>
-                <div class="bg-zinc-950 p-3 rounded-xl border border-zinc-800">
-                    <p id="stat-offline-count" class="text-lg font-bold text-sky-400">0</p>
-                    <p class="text-[10px] text-zinc-500">Downloaded</p>
-                </div>
-            </div>
-            <button onclick="handleLogout()" class="w-full bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 font-semibold py-2.5 rounded-lg text-sm transition">Logout</button>
-        </div>
+    <div class="controls">
+
+        <button class="control" onclick="previousSong()">
+            ⏮
+        </button>
+
+        <button id="playPause"
+                class="main-play"
+                onclick="togglePlay()">
+            ▶
+        </button>
+
+        <button class="control" onclick="nextSong()">
+            ⏭
+        </button>
+
     </div>
 
-    <!-- AUDIO VISUALIZER FULLSCREEN MODAL -->
-    <div id="visualizer-modal" class="fixed inset-0 bg-black/95 backdrop-blur-xl z-50 hidden flex flex-col items-center justify-between p-6">
-        <div class="w-full flex items-center justify-between max-w-4xl">
-            <div class="flex items-center space-x-3">
-                <div class="w-8 h-8 rounded-lg bg-emerald-500 flex items-center justify-center text-black font-bold">
-                    <i class="fa-solid fa-waveform"></i>
-                </div>
-                <span class="font-bold tracking-tight text-sm text-zinc-300">GentleBeats Live Visualizer</span>
-            </div>
-            <button onclick="closeVisualizerModal()" class="w-10 h-10 rounded-full bg-zinc-800 hover:bg-zinc-700 flex items-center justify-center text-white"><i class="fa-solid fa-xmark"></i></button>
+    <div class="progress-container">
+
+        <input
+            id="progress"
+            class="progress"
+            type="range"
+            min="0"
+            max="100"
+            value="0"
+        >
+
+        <div class="time">
+            <span id="currentTime">0:00</span>
+            <span id="duration">0:00</span>
         </div>
 
-        <div class="flex flex-col items-center space-y-4 my-auto w-full max-w-xl">
-            <img id="vis-cover" src="https://placehold.co/300x300/10b981/ffffff?text=Echo" class="w-48 h-48 md:w-64 md:h-64 rounded-2xl object-cover shadow-2xl border border-emerald-500/30 animate-pulse">
-            <div class="text-center">
-                <h3 id="vis-title" class="text-2xl font-bold">Track Title</h3>
-                <p id="vis-artist" class="text-sm text-zinc-400 mt-1">Artist Name</p>
-            </div>
-            <!-- Canvas Visualizer -->
-            <canvas id="audio-canvas" class="w-full h-32 rounded-xl bg-zinc-950/80 border border-zinc-800 shadow-inner"></canvas>
-        </div>
-
-        <div class="w-full max-w-md flex items-center justify-center space-x-6 pb-4">
-            <button onclick="playPrev()" class="text-zinc-400 hover:text-white text-xl"><i class="fa-solid fa-backward-step"></i></button>
-            <button onclick="togglePlay()" id="vis-play-btn" class="w-12 h-12 rounded-full bg-white text-black flex items-center justify-center text-lg shadow-xl"><i class="fa-solid fa-play ml-0.5"></i></button>
-            <button onclick="playNext()" class="text-zinc-400 hover:text-white text-xl"><i class="fa-solid fa-forward-step"></i></button>
-        </div>
     </div>
 
-    <!-- SPOTIFY-STYLE YEARLY WRAP MODAL -->
-    <div id="wrap-modal" class="fixed inset-0 bg-black/95 backdrop-blur-2xl z-50 hidden flex flex-col items-center justify-center p-4">
-        <div class="w-full max-w-md bg-gradient-to-br from-emerald-950 via-zinc-900 to-black border border-emerald-500/30 rounded-3xl p-8 relative shadow-2xl flex flex-col justify-between h-[600px] overflow-hidden">
-            <!-- Background glow -->
-            <div class="absolute -top-20 -right-20 w-64 h-64 bg-emerald-500/20 rounded-full blur-3xl pointer-events-none"></div>
-            <div class="absolute -bottom-20 -left-20 w-64 h-64 bg-teal-500/20 rounded-full blur-3xl pointer-events-none"></div>
+</div>
 
-            <div class="flex items-center justify-between z-10">
-                <span class="bg-emerald-500 text-black text-[10px] font-extrabold px-3 py-1 rounded-full uppercase tracking-widest">GentleBeats Wrap '26</span>
-                <button onclick="closeWrapModal()" class="w-8 h-8 rounded-full bg-zinc-800/80 hover:bg-zinc-700 flex items-center justify-center text-zinc-300"><i class="fa-solid fa-xmark"></i></button>
-            </div>
 
-            <!-- Wrap Content Carousel / Slides -->
-            <div id="wrap-slide-container" class="my-auto z-10 space-y-6 text-center">
-                <!-- Populated via JS for slideshow steps -->
-            </div>
+<script src="https://www.youtube.com/iframe_api"></script>
 
-            <div class="flex items-center justify-between z-10 pt-4 border-t border-zinc-800/80">
-                <button onclick="prevWrapSlide()" class="text-xs font-semibold text-zinc-400 hover:text-white"><i class="fa-solid fa-arrow-left mr-1"></i> Prev</button>
-                <div id="wrap-dots" class="flex space-x-1.5">
-                    <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-                    <span class="w-2 h-2 rounded-full bg-zinc-700"></span>
-                    <span class="w-2 h-2 rounded-full bg-zinc-700"></span>
-                    <span class="w-2 h-2 rounded-full bg-zinc-700"></span>
-                </div>
-                <button onclick="nextWrapSlide()" class="text-xs font-semibold text-emerald-400 hover:text-emerald-300">Next <i class="fa-solid fa-arrow-right ml-1"></i></button>
-            </div>
-        </div>
-    </div>
+<script>
 
-    <script>
-        // --- MOCK DATABASE OF SONGS ---
-        const songs = [
-            { id: 1, title: "Midnight City Lights", artist: "Synthwave Collective", genre: "Chill", duration: 214, cover: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=400&q=80", audioUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3", plays: 142 },
-            { id: 2, title: "Adrenaline Surge", artist: "Beast Mode", genre: "Workout", duration: 185, cover: "https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?auto=format&fit=crop&w=400&q=80", audioUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3", plays: 290 },
-            { id: 3, title: "Minimalist Focus", artist: "Deep Sleep & Study", genre: "Focus", duration: 240, cover: "https://images.unsplash.com/photo-1459749411175-04bf5292ceea?auto=format&fit=crop&w=400&q=80", audioUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3", plays: 98 },
-            { id: 4, title: "Electric Neon Party", artist: "DJ Hyperion", genre: "Party", duration: 198, cover: "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=400&q=80", audioUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3", plays: 310 },
-            { id: 5, title: "Acoustic Sunset", artist: "Luna Woods", genre: "Chill", duration: 225, cover: "https://images.unsplash.com/photo-1465847899084-d164df4dedc6?auto=format&fit=crop&w=400&q=80", audioUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3", plays: 175 },
-            { id: 6, title: "Heavy Metal Thunder", artist: "Iron Core", genre: "Workout", duration: 205, cover: "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=400&q=80", audioUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-6.mp3", plays: 210 },
-            { id: 7, title: "Lo-Fi Coffee Break", artist: "Study Club", genre: "Focus", duration: 170, cover: "https://images.unsplash.com/photo-1501386761578-eac5c94b800a?auto=format&fit=crop&w=400&q=80", audioUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-7.mp3", plays: 134 },
-            { id: 8, title: "Club Anthem 2026", artist: "Stella Ray", genre: "Party", duration: 210, cover: "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?auto=format&fit=crop&w=400&q=80", audioUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3", plays: 420 }
-        ];
+    /*
+       ============================================
+       PUT YOUR YOUTUBE DATA API KEY HERE
+       ============================================
+    */
 
-        // --- APPLICATION STATE ---
-        function readStoredJSON(key, fallback) {
-            try {
-                const raw = localStorage.getItem(key);
-                return raw ? JSON.parse(raw) : fallback;
-            } catch (error) {
-                console.warn('Could not read saved data:', key, error);
-                return fallback;
+    const API_KEY = "YOUR_YOUTUBE_API_KEY";
+
+
+    let player;
+
+    let songs = [];
+
+    let currentIndex = -1;
+
+    let isReady = false;
+
+
+    /*
+       ============================================
+       YOUTUBE PLAYER
+       ============================================
+    */
+
+    function onYouTubeIframeAPIReady() {
+
+        player = new YT.Player("youtube-player", {
+
+            height: "0",
+
+            width: "0",
+
+            videoId: "",
+
+            playerVars: {
+
+                autoplay: 0,
+
+                controls: 0,
+
+                rel: 0
+
+            },
+
+            events: {
+
+                onReady: function () {
+
+                    isReady = true;
+
+                },
+
+                onStateChange: function(event) {
+
+                    if (
+                        event.data ===
+                        YT.PlayerState.PLAYING
+                    ) {
+
+                        document.getElementById(
+                            "playPause"
+                        ).innerText = "⏸";
+
+                    }
+
+                    if (
+                        event.data ===
+                        YT.PlayerState.PAUSED
+                    ) {
+
+                        document.getElementById(
+                            "playPause"
+                        ).innerText = "▶";
+
+                    }
+
+                    if (
+                        event.data ===
+                        YT.PlayerState.ENDED
+                    ) {
+
+                        nextSong();
+
+                    }
+
+                }
+
             }
-        }
 
-        let currentUser = readStoredJSON('echobeat_user', null);
-        let likedSongIds = readStoredJSON('echobeat_liked', [1, 4]);
-        let offlineSongIds = readStoredJSON('echobeat_offline', []);
-        let isOfflineMode = false;
-
-        // Real offline audio cache. The original UI only marked tracks as downloaded;
-        // this version actually stores downloaded audio in IndexedDB when the source
-        // permits browser access.
-        const OFFLINE_DB = 'echobeat_offline_db';
-        const OFFLINE_STORE = 'tracks';
-        let offlineDbPromise = null;
-
-        function openOfflineDB() {
-            if (!('indexedDB' in window)) return Promise.reject(new Error('IndexedDB is not supported by this browser.'));
-            if (offlineDbPromise) return offlineDbPromise;
-            offlineDbPromise = new Promise((resolve, reject) => {
-                const request = indexedDB.open(OFFLINE_DB, 1);
-                request.onupgradeneeded = () => {
-                    const db = request.result;
-                    if (!db.objectStoreNames.contains(OFFLINE_STORE)) db.createObjectStore(OFFLINE_STORE);
-                };
-                request.onsuccess = () => resolve(request.result);
-                request.onerror = () => reject(request.error || new Error('Could not open offline storage.'));
-            });
-            return offlineDbPromise;
-        }
-
-        async function saveOfflineTrack(songId, blob) {
-            const db = await openOfflineDB();
-            return new Promise((resolve, reject) => {
-                const tx = db.transaction(OFFLINE_STORE, 'readwrite');
-                tx.objectStore(OFFLINE_STORE).put(blob, String(songId));
-                tx.oncomplete = resolve;
-                tx.onerror = () => reject(tx.error || new Error('Could not save track.'));
-            });
-        }
-
-        async function getOfflineTrack(songId) {
-            const db = await openOfflineDB();
-            return new Promise((resolve, reject) => {
-                const tx = db.transaction(OFFLINE_STORE, 'readonly');
-                const request = tx.objectStore(OFFLINE_STORE).get(String(songId));
-                request.onsuccess = () => resolve(request.result || null);
-                request.onerror = () => reject(request.error || new Error('Could not read offline track.'));
-            });
-        }
-
-        async function deleteOfflineTrack(songId) {
-            try {
-                const db = await openOfflineDB();
-                await new Promise((resolve, reject) => {
-                    const tx = db.transaction(OFFLINE_STORE, 'readwrite');
-                    tx.objectStore(OFFLINE_STORE).delete(String(songId));
-                    tx.oncomplete = resolve;
-                    tx.onerror = () => reject(tx.error);
-                });
-            } catch (error) {
-                console.warn('Could not remove offline file:', error);
-            }
-        }
-
-        let currentPlaylist = [...songs];
-        let currentIndex = 0;
-        let isPlaying = false;
-        let isShuffle = false;
-        let isRepeat = false;
-
-        let wrapSlideIndex = 0;
-
-        // --- INITIALIZATION ---
-        window.addEventListener('DOMContentLoaded', () => {
-            updateUserUI();
-            renderTrendingGrid();
-            renderSearchResults("");
-            renderLikedSongs();
-            renderOfflineSongs();
-            renderAIMix('All');
-
-            initVisualizerCanvas();
-            switchTab('home');
         });
 
-        // --- TOAST NOTIFICATION ---
-        function showToast(message, type = 'success') {
-            const container = document.getElementById('toast-container');
-            const toast = document.createElement('div');
-            toast.className = `pointer-events-auto px-4 py-3 rounded-xl shadow-2xl text-xs font-semibold flex items-center space-x-2 border transition transform translate-y-2 opacity-0 ${
-                type === 'success' ? 'bg-zinc-900 border-emerald-500/40 text-emerald-400' : 'bg-zinc-900 border-rose-500/40 text-rose-400'
-            }`;
-            toast.innerHTML = `<i class="fa-solid ${type === 'success' ? 'fa-circle-check' : 'fa-circle-exclamation'}"></i><span>${message}</span>`;
-            container.appendChild(toast);
-            setTimeout(() => toast.classList.remove('translate-y-2', 'opacity-0'), 10);
-            setTimeout(() => {
-                toast.classList.add('translate-y-2', 'opacity-0');
-                setTimeout(() => toast.remove(), 300);
-            }, 3000);
-        }
+    }
 
-        // --- TAB NAVIGATION ---
-        function switchTab(tabId) {
-            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
-            document.querySelectorAll('.nav-btn').forEach(el => {
-                el.classList.remove('bg-zinc-800', 'text-white');
-                el.classList.add('text-zinc-400');
+
+    /*
+       ============================================
+       SEARCH YOUTUBE
+       ============================================
+    */
+
+    const searchBox =
+        document.getElementById("search");
+
+
+    searchBox.addEventListener(
+        "keydown",
+        function(event) {
+
+            if (event.key === "Enter") {
+
+                searchYouTube(
+                    searchBox.value.trim()
+                );
+
+            }
+
+        }
+    );
+
+
+    async function searchYouTube(query) {
+
+        if (!query) return;
+
+
+        const results =
+            document.getElementById("results");
+
+
+        results.innerHTML = `
+            <div class="empty">
+                Searching YouTube...
+            </div>
+        `;
+
+
+        /*
+           Search for music videos.
+        */
+
+        const url =
+            "https://www.googleapis.com/youtube/v3/search?" +
+
+            new URLSearchParams({
+
+                part: "snippet",
+
+                q: query + " official audio",
+
+                type: "video",
+
+                videoCategoryId: "10",
+
+                maxResults: 24,
+
+                key: API_KEY
+
             });
-            
-            const targetTab = document.getElementById(`tab-${tabId}`);
-            if (targetTab) {
-                targetTab.classList.remove('hidden');
-                if (tabId === 'search') setTimeout(() => document.getElementById('search-input')?.focus(), 0);
+
+
+        try {
+
+            const response =
+                await fetch(url);
+
+
+            const data =
+                await response.json();
+
+
+            if (!data.items) {
+
+                throw new Error(
+                    data.error?.message ||
+                    "Search failed"
+                );
+
             }
 
-            const activeBtn = document.querySelector(`[data-tab="${tabId}"]`);
-            if (activeBtn) {
-                activeBtn.classList.remove('text-zinc-400');
-                activeBtn.classList.add('bg-zinc-800', 'text-white');
-            }
 
-            const titles = {
-                'home': 'Discover Music',
-                'search': 'Search Catalog',
-                'recommendations': 'AI Vibe Recommendations',
-                'library': 'Liked Songs Library',
-                'offline': 'Downloaded Offline Tracks'
-            };
-            document.getElementById('header-title').innerText = titles[tabId] || 'GentleBeats';
+            songs =
+                data.items.map(item => ({
+
+                    id:
+                        item.id.videoId,
+
+                    title:
+                        item.snippet.title,
+
+                    channel:
+                        item.snippet.channelTitle,
+
+                    image:
+                        item.snippet.thumbnails
+                            .high.url
+
+                }));
+
+
+            displaySongs();
+
         }
 
-        // --- AUTHENTICATION & PROFILE ---
-        function openAuthModal() { document.getElementById('auth-modal').classList.remove('hidden'); }
-        function closeAuthModal() { document.getElementById('auth-modal').classList.add('hidden'); }
-        function openProfileModal() {
-            if (!currentUser) { openAuthModal(); return; }
-            document.getElementById('profile-name').innerText = currentUser.name;
-            document.getElementById('profile-email').innerText = currentUser.email;
-            document.getElementById('profile-avatar').src = `https://placehold.co/200x200/10b981/ffffff?text=${currentUser.name.charAt(0)}`;
-            document.getElementById('stat-liked-count').innerText = likedSongIds.length;
-            document.getElementById('stat-offline-count').innerText = offlineSongIds.length;
-            document.getElementById('profile-modal').classList.remove('hidden');
-        }
-        function closeProfileModal() { document.getElementById('profile-modal').classList.add('hidden'); }
+        catch(error) {
 
-        let authMode = 'login';
-        function switchAuthMode(mode) {
-            authMode = mode;
-            const loginBtn = document.getElementById('auth-tab-login');
-            const regBtn = document.getElementById('auth-tab-register');
-            const regFields = document.getElementById('register-fields');
-            const submitBtn = document.getElementById('auth-submit-btn');
+            console.error(error);
 
-            if (mode === 'login') {
-                loginBtn.className = "flex-1 py-2 text-xs font-semibold rounded-md bg-zinc-800 text-white transition";
-                regBtn.className = "flex-1 py-2 text-xs font-semibold rounded-md text-zinc-400 hover:text-white transition";
-                regFields.classList.add('hidden');
-                submitBtn.innerText = "Login to Account";
-            } else {
-                regBtn.className = "flex-1 py-2 text-xs font-semibold rounded-md bg-zinc-800 text-white transition";
-                loginBtn.className = "flex-1 py-2 text-xs font-semibold rounded-md text-zinc-400 hover:text-white transition";
-                regFields.classList.remove('hidden');
-                submitBtn.innerText = "Create Free Account";
-            }
-        }
 
-        function handleAuthSubmit(e) {
-            e.preventDefault();
-            const email = document.getElementById('auth-email').value;
-            const name = authMode === 'register' ? document.getElementById('auth-name').value : email.split('@')[0];
-            
-            currentUser = { name: name || 'Music Lover', email: email };
-            localStorage.setItem('echobeat_user', JSON.stringify(currentUser));
-            updateUserUI();
-            closeAuthModal();
-            showToast(`Welcome back, ${currentUser.name}!`);
-        }
+            results.innerHTML = `
+                <div class="empty">
 
-        function handleLogout() {
-            currentUser = null;
-            localStorage.removeItem('echobeat_user');
-            updateUserUI();
-            closeProfileModal();
-            showToast("Logged out successfully.", "error");
-        }
+                    Search failed.
 
-        function updateUserUI() {
-            const nameEl = document.getElementById('sidebar-user-name');
-            const avatarEl = document.getElementById('sidebar-user-avatar');
-            const actionBtn = document.getElementById('auth-action-btn');
+                    <br><br>
 
-            if (currentUser) {
-                nameEl.innerText = currentUser.name;
-                avatarEl.src = `https://placehold.co/100x100/10b981/ffffff?text=${currentUser.name.charAt(0)}`;
-                actionBtn.innerText = "Profile";
-                actionBtn.onclick = openProfileModal;
-                actionBtn.className = "text-xs bg-zinc-800 hover:bg-zinc-700 text-zinc-200 font-medium px-3 py-1.5 rounded-lg transition";
-            } else {
-                nameEl.innerText = "Guest User";
-                avatarEl.src = "https://placehold.co/100x100/18181b/ffffff?text=U";
-                actionBtn.innerText = "Login";
-                actionBtn.onclick = openAuthModal;
-                actionBtn.className = "text-xs bg-emerald-600 hover:bg-emerald-500 text-white font-medium px-3 py-1.5 rounded-lg transition shadow-sm";
-            }
-        }
+                    Make sure your YouTube API
+                    key is correctly configured.
 
-        // --- NETWORK & OFFLINE MODE ---
-        function toggleOfflineMode() {
-            isOfflineMode = !isOfflineMode;
-            updateNetworkUI();
-            showToast(
-                isOfflineMode
-                    ? 'Offline Mode: only downloaded tracks can play.'
-                    : 'Online Mode: streaming is available.'
-            );
-        }
+                    <br><br>
 
-        // --- RENDER SONG LISTS ---
-        function renderSongListHtml(list, containerId, showDownload = true) {
-            const container = document.getElementById(containerId);
-            if (!container) return;
-            if (list.length === 0) {
-                container.innerHTML = `<div class="text-center py-12 text-zinc-500 text-xs">No tracks found.</div>`;
-                return;
-            }
+                    ${error.message}
 
-            container.innerHTML = list.map((song, idx) => {
-                const isLiked = likedSongIds.includes(song.id);
-                const isDownloaded = offlineSongIds.includes(song.id);
-                return `
-                    <div class="flex items-center justify-between p-3 rounded-xl bg-zinc-900/60 hover:bg-zinc-800/80 border border-zinc-800/60 transition group">
-                        <div class="flex items-center space-x-4 cursor-pointer flex-1 overflow-hidden" onclick="playSongFromList(${song.id})">
-                            <div class="relative w-12 h-12 rounded-lg overflow-hidden flex-shrink-0">
-                                <img src="${song.cover}" class="w-full h-full object-cover group-hover:scale-105 transition">
-                                <div class="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
-                                    <i class="fa-solid fa-play text-white text-xs"></i>
-                                </div>
-                            </div>
-                            <div class="truncate">
-                                <h4 class="text-sm font-semibold text-zinc-200 truncate group-hover:text-emerald-400 transition">${song.title}</h4>
-                                <p class="text-xs text-zinc-400 truncate">${song.artist}</p>
-                            </div>
-                        </div>
-                        <div class="flex items-center space-x-3">
-                            <span class="text-xs text-zinc-500 hidden sm:inline">${Math.floor(song.duration / 60)}:${(song.duration % 60).toString().padStart(2, '0')}</span>
-                            ${showDownload ? `
-                                <button onclick="toggleDownload(${song.id})" title="${isDownloaded ? 'Downloaded' : 'Download for Offline'}" class="w-8 h-8 rounded-lg flex items-center justify-center transition ${isDownloaded ? 'bg-sky-500/20 text-sky-400' : 'bg-zinc-800 text-zinc-400 hover:text-white'}">
-                                    <i class="fa-solid ${isDownloaded ? 'fa-circle-check' : 'fa-download'} text-xs"></i>
-                                </button>
-                            ` : ''}
-                            <button onclick="toggleLike(${song.id})" class="w-8 h-8 rounded-lg bg-zinc-800 flex items-center justify-center text-xs transition ${isLiked ? 'text-rose-500' : 'text-zinc-400 hover:text-white'}">
-                                <i class="${isLiked ? 'fa-solid' : 'fa-regular'} fa-heart"></i>
-                            </button>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-        }
-
-        function renderTrendingGrid() {
-            const grid = document.getElementById('trending-grid');
-            if (!grid) return;
-            grid.innerHTML = songs.slice(0, 5).map(song => `
-                <div onclick="playSong(${song.id})" class="bg-zinc-900/80 p-3 rounded-xl border border-zinc-800 hover:border-emerald-500/50 cursor-pointer transition group shadow-lg">
-                    <div class="relative aspect-square rounded-lg overflow-hidden mb-3">
-                        <img src="${song.cover}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300">
-                        <div class="absolute bottom-2 right-2 w-10 h-10 rounded-full bg-emerald-500 text-black flex items-center justify-center shadow-lg opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 transition">
-                            <i class="fa-solid fa-play ml-0.5 text-xs"></i>
-                        </div>
-                    </div>
-                    <h4 class="font-semibold text-sm truncate text-zinc-200">${song.title}</h4>
-                    <p class="text-xs text-zinc-400 truncate mt-0.5">${song.artist}</p>
-                </div>
-            `).join('');
-        }
-
-        function renderSearchResults(query) {
-            const filtered = songs.filter(s => s.title.toLowerCase().includes(query.toLowerCase()) || s.artist.toLowerCase().includes(query.toLowerCase()) || s.genre.toLowerCase().includes(query.toLowerCase()));
-            renderSongListHtml(filtered, 'search-results-list');
-        }
-
-        function handleSearch(val) {
-            renderSearchResults(val);
-            if (val.trim()) switchTab('search');
-        }
-
-        function renderLikedSongs() {
-            const likedList = songs.filter(s => likedSongIds.includes(s.id));
-            document.getElementById('liked-count').innerText = `${likedList.length} songs in your library`;
-            renderSongListHtml(likedList, 'liked-songs-list');
-        }
-
-        function renderOfflineSongs() {
-            const offlineList = songs.filter(s => offlineSongIds.includes(s.id));
-            document.getElementById('offline-count').innerText = `${offlineList.length} tracks downloaded for offline playback`;
-            renderSongListHtml(offlineList, 'offline-songs-list');
-        }
-
-        // --- AI RECOMMENDATIONS & MOODS ---
-        function selectMood(mood) {
-            switchTab('recommendations');
-            generateAIMix(mood);
-            showToast(`Generated AI Playlist for: ${mood}`);
-        }
-
-        function generateAIMix(genre) {
-            document.querySelectorAll('.ai-filter-btn').forEach(btn => {
-                btn.className = "ai-filter-btn px-4 py-2 rounded-full bg-zinc-800 text-zinc-300 hover:text-white text-xs font-semibold transition";
-            });
-            const activeButton = Array.from(document.querySelectorAll('.ai-filter-btn')).find(btn => btn.textContent.toLowerCase().includes(genre.toLowerCase()));
-            if (activeButton) {
-                activeButton.classList.remove('bg-zinc-800', 'text-zinc-300');
-                activeButton.classList.add('bg-emerald-500', 'text-black');
-            }
-
-            const filtered = genre === 'All' ? [...songs].sort(() => 0.5 - Math.random()) : songs.filter(s => s.genre === genre);
-            renderSongListHtml(filtered, 'ai-recommendations-list');
-        }
-
-        // --- AUDIO PLAYER CONTROLS ---
-        // GentleBeats uses a local Web Audio engine for the demo tracks. This means
-        // Play/Search work even when the HTML is opened directly from a file:// URL,
-        // without depending on an external MP3 host.
-        let audioContext = null;
-        let masterGain = null;
-        let activeVoices = [];
-        let audioTimer = null;
-        let audioStartedAt = 0;
-        let audioPausedAt = 0;
-        let demoDuration = 30;
-
-        const genrePatterns = {
-            Chill:  [261.63, 329.63, 392.00, 493.88],
-            Focus:  [220.00, 261.63, 329.63, 392.00],
-            Party:  [261.63, 311.13, 392.00, 466.16],
-            Workout:[130.81, 164.81, 196.00, 246.94],
-            All:    [261.63, 293.66, 329.63, 392.00]
-        };
-
-        function ensureAudioEngine() {
-            if (!audioContext) {
-                const Ctx = window.AudioContext || window.webkitAudioContext;
-                if (!Ctx) throw new Error('Web Audio is not supported by this browser.');
-                audioContext = new Ctx();
-                masterGain = audioContext.createGain();
-                masterGain.gain.value = 0.18;
-                masterGain.connect(audioContext.destination);
-            }
-            if (audioContext.state === 'suspended') return audioContext.resume();
-            return Promise.resolve();
-        }
-
-        function stopDemoVoices() {
-            activeVoices.forEach(v => {
-                try { v.osc.stop(); } catch (_) {}
-                try { v.gain.disconnect(); } catch (_) {}
-            });
-            activeVoices = [];
-            if (audioTimer) {
-                clearInterval(audioTimer);
-                audioTimer = null;
-            }
-        }
-
-        function createVoice(freq, start, duration, type='sine', volume=0.08) {
-            const osc = audioContext.createOscillator();
-            const gain = audioContext.createGain();
-            osc.type = type;
-            osc.frequency.setValueAtTime(freq, start);
-            gain.gain.setValueAtTime(0.0001, start);
-            gain.gain.exponentialRampToValueAtTime(volume, start + 0.03);
-            gain.gain.exponentialRampToValueAtTime(0.0001, start + Math.max(0.08, duration - 0.04));
-            osc.connect(gain).connect(masterGain);
-            osc.start(start);
-            osc.stop(start + duration);
-            const voice = { osc, gain };
-            activeVoices.push(voice);
-        }
-
-        function scheduleDemoTrack(song, offset=0) {
-            stopDemoVoices();
-            const now = audioContext.currentTime + 0.04;
-            const notes = genrePatterns[song.genre] || genrePatterns.All;
-            const tempo = song.genre === 'Workout' || song.genre === 'Party' ? 0.28 : 0.42;
-            const end = now + demoDuration - offset;
-
-            for (let t = 0; t < demoDuration - offset; t += tempo) {
-                const beat = Math.floor(t / tempo);
-                const root = notes[beat % notes.length];
-                createVoice(root, now + t, Math.min(tempo * 0.9, end - (now + t)), 'triangle', 0.055);
-                if (beat % 2 === 0) {
-                    createVoice(root * 2, now + t + tempo * 0.35, Math.min(tempo * 0.45, end - (now + t + tempo * 0.35)), 'sine', 0.025);
-                }
-                if (song.genre === 'Party' || song.genre === 'Workout') {
-                    createVoice(65.41, now + t, Math.min(0.10, end - (now + t)), 'square', 0.035);
-                }
-            }
-        }
-
-        function getElapsed() {
-            if (!audioContext || !isPlaying) return audioPausedAt;
-            return Math.min(demoDuration, audioPausedAt + (audioContext.currentTime - audioStartedAt));
-        }
-
-        function updateDemoProgress() {
-            if (!isPlaying) return;
-            const elapsed = getElapsed();
-            const pct = Math.min(100, (elapsed / demoDuration) * 100);
-            document.getElementById('progress-bar').style.width = `${pct}%`;
-            const mins = Math.floor(elapsed / 60);
-            const secs = Math.floor(elapsed % 60).toString().padStart(2, '0');
-            document.getElementById('current-time').innerText = `${mins}:${secs}`;
-            if (elapsed >= demoDuration) {
-                handleSongEnded();
-            }
-        }
-
-        async function startAudioPlayback(song, resumeOffset=0) {
-            if (!song) return;
-            try {
-                await ensureAudioEngine();
-                stopDemoVoices();
-                audioPausedAt = Math.max(0, Math.min(demoDuration - 0.1, resumeOffset || 0));
-                audioStartedAt = audioContext.currentTime;
-                scheduleDemoTrack(song, audioPausedAt);
-
-                document.getElementById('player-title').innerText = song.title;
-                document.getElementById('player-artist').innerText = song.artist;
-                document.getElementById('player-cover').src = song.cover;
-                document.getElementById('total-duration').innerText = `0:${demoDuration.toString().padStart(2, '0')}`;
-                document.getElementById('current-time').innerText = '0:00';
-                document.getElementById('progress-bar').style.width = `${(audioPausedAt / demoDuration) * 100}%`;
-                document.getElementById('vis-title').innerText = song.title;
-                document.getElementById('vis-artist').innerText = song.artist;
-                document.getElementById('vis-cover').src = song.cover;
-
-                const likeBtn = document.getElementById('player-like-btn');
-                likeBtn.innerHTML = likedSongIds.includes(song.id)
-                    ? `<i class="fa-solid fa-heart text-rose-500"></i>`
-                    : `<i class="fa-regular fa-heart"></i>`;
-
-                isPlaying = true;
-                updatePlayUI();
-                clearInterval(audioTimer);
-                audioTimer = setInterval(updateDemoProgress, 100);
-                showToast(`Playing ${song.title}`);
-            } catch (error) {
-                isPlaying = false;
-                updatePlayUI();
-                console.error('Playback error:', error);
-                showToast(error.message || 'Unable to start playback.', 'error');
-            }
-        }
-
-        function playSong(id) {
-            const song = songs.find(s => s.id === id);
-            if (!song) return;
-            if (isOfflineMode && !offlineSongIds.includes(song.id)) {
-                showToast('Track not available offline! Connect to internet or download first.', 'error');
-                return;
-            }
-            currentPlaylist = [song];
-            currentIndex = 0;
-            startAudioPlayback(song);
-        }
-
-        function playSongFromList(id) {
-            const song = songs.find(s => s.id === id);
-            if (!song) return;
-            if (isOfflineMode && !offlineSongIds.includes(song.id)) {
-                showToast('Track not available offline!', 'error');
-                return;
-            }
-            currentPlaylist = [...songs];
-            currentIndex = currentPlaylist.findIndex(s => s.id === id);
-            startAudioPlayback(song);
-        }
-
-        function playPlaylist(list) {
-            if (!list.length) return;
-            currentPlaylist = [...list];
-            currentIndex = 0;
-            startAudioPlayback(currentPlaylist[0]);
-        }
-
-        function playLikedSongs() {
-            const list = songs.filter(s => likedSongIds.includes(s.id));
-            if (!list.length) { showToast('No liked songs to play.', 'error'); return; }
-            playPlaylist(list);
-        }
-
-        function playOfflineSongs() {
-            const list = songs.filter(s => offlineSongIds.includes(s.id));
-            if (!list.length) { showToast('No offline songs downloaded.', 'error'); return; }
-            isOfflineMode = true;
-            updateNetworkUI();
-            playPlaylist(list);
-        }
-
-        async function togglePlay() {
-            if (!currentPlaylist.length) {
-                await playSong(songs[0].id);
-                return;
-            }
-            if (isPlaying) {
-                audioPausedAt = getElapsed();
-                isPlaying = false;
-                stopDemoVoices();
-                updatePlayUI();
-                return;
-            }
-            const song = currentPlaylist[currentIndex];
-            await startAudioPlayback(song, audioPausedAt);
-        }
-
-        function updatePlayUI() {
-            const playIcon = `<i class="fa-solid fa-play ml-0.5"></i>`;
-            const pauseIcon = `<i class="fa-solid fa-pause"></i>`;
-            document.getElementById('player-play-btn').innerHTML = isPlaying ? pauseIcon : playIcon;
-            document.getElementById('vis-play-btn').innerHTML = isPlaying ? pauseIcon : playIcon;
-        }
-
-        function playNext() {
-            if (!currentPlaylist.length) return;
-            currentIndex = isShuffle ? Math.floor(Math.random() * currentPlaylist.length) : (currentIndex + 1) % currentPlaylist.length;
-            audioPausedAt = 0;
-            startAudioPlayback(currentPlaylist[currentIndex]);
-        }
-
-        function playPrev() {
-            if (!currentPlaylist.length) return;
-            currentIndex = (currentIndex - 1 + currentPlaylist.length) % currentPlaylist.length;
-            audioPausedAt = 0;
-            startAudioPlayback(currentPlaylist[currentIndex]);
-        }
-
-        function toggleShuffle() {
-            isShuffle = !isShuffle;
-            const btn = document.getElementById('player-shuffle-btn');
-            btn.className = isShuffle ? "text-emerald-400 text-sm transition" : "text-zinc-400 hover:text-white text-sm transition";
-            showToast(isShuffle ? 'Shuffle Enabled' : 'Shuffle Disabled');
-        }
-
-        function toggleRepeat() {
-            isRepeat = !isRepeat;
-            const btn = document.getElementById('player-repeat-btn');
-            btn.className = isRepeat ? "text-emerald-400 text-sm transition" : "text-zinc-400 hover:text-white text-sm transition";
-            showToast(isRepeat ? 'Repeat Enabled' : 'Repeat Disabled');
-        }
-
-        function updateProgress() {
-            updateDemoProgress();
-        }
-
-        function seekTrack(e) {
-            const rect = e.currentTarget.getBoundingClientRect();
-            const pos = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-            audioPausedAt = pos * demoDuration;
-            document.getElementById('progress-bar').style.width = `${pos * 100}%`;
-            const mins = Math.floor(audioPausedAt / 60);
-            const secs = Math.floor(audioPausedAt % 60).toString().padStart(2, '0');
-            document.getElementById('current-time').innerText = `${mins}:${secs}`;
-            if (isPlaying && currentPlaylist.length) startAudioPlayback(currentPlaylist[currentIndex], audioPausedAt);
-        }
-
-        function setVolume(val) {
-            if (masterGain) masterGain.gain.value = (val / 100) * 0.25;
-        }
-
-        function handleSongEnded() {
-            if (isRepeat && currentPlaylist.length > 0) {
-                audioPausedAt = 0;
-                startAudioPlayback(currentPlaylist[currentIndex]);
-            } else {
-                playNext();
-            }
-        }
-
-        // --- LIKES & OFFLINE DOWNLOADS ---
-        function toggleLike(id) {
-            if (likedSongIds.includes(id)) {
-                likedSongIds = likedSongIds.filter(i => i !== id);
-                showToast("Removed from Liked Songs", "error");
-            } else {
-                likedSongIds.push(id);
-                showToast("Added to Liked Songs");
-            }
-            localStorage.setItem('echobeat_liked', JSON.stringify(likedSongIds));
-            renderLikedSongs();
-            renderTrendingGrid();
-        }
-
-        function toggleLikeCurrent() {
-            if (currentPlaylist.length === 0) return;
-            const currentSong = currentPlaylist[currentIndex];
-            toggleLike(currentSong.id);
-            const likeBtn = document.getElementById('player-like-btn');
-            if (likedSongIds.includes(currentSong.id)) {
-                likeBtn.innerHTML = `<i class="fa-solid fa-heart text-rose-500"></i>`;
-            } else {
-                likeBtn.innerHTML = `<i class="fa-regular fa-heart"></i>`;
-            }
-        }
-
-        async function toggleDownload(id) {
-            const song = songs.find(s => s.id === id);
-            if (!song) return;
-
-            if (offlineSongIds.includes(id)) {
-                await deleteOfflineTrack(id);
-                offlineSongIds = offlineSongIds.filter(i => i !== id);
-                showToast('Removed from Offline Storage', 'error');
-            } else {
-                try {
-                    showToast('Saving track for Offline Mode...');
-                    const response = await fetch(song.audioUrl, { mode: 'cors' });
-                    if (!response.ok) throw new Error(`Download failed (${response.status})`);
-                    const blob = await response.blob();
-                    if (!blob.size) throw new Error('The downloaded file was empty.');
-                    await saveOfflineTrack(id, blob);
-                    offlineSongIds.push(id);
-                    showToast('Downloaded successfully for offline playback!');
-                } catch (error) {
-                    console.error('Offline download error:', error);
-                    showToast('Download failed. The music server may block browser downloads; try streaming online instead.', 'error');
-                }
-            }
-            localStorage.setItem('echobeat_offline', JSON.stringify(offlineSongIds));
-            renderOfflineSongs();
-            renderTrendingGrid();
-        }
-
-        // --- AUDIO VISUALIZER CANVAS ---
-        let visualizerCanvas, visCtx, animId;
-        function initVisualizerCanvas() {
-            visualizerCanvas = document.getElementById('audio-canvas');
-            if (!visualizerCanvas) return;
-            visCtx = visualizerCanvas.getContext('2d');
-            visualizerCanvas.width = visualizerCanvas.offsetWidth;
-            visualizerCanvas.height = visualizerCanvas.offsetHeight;
-        }
-
-        function openVisualizerModal() {
-            document.getElementById('visualizer-modal').classList.remove('hidden');
-            startVisualizerLoop();
-        }
-
-        function closeVisualizerModal() {
-            document.getElementById('visualizer-modal').classList.add('hidden');
-            cancelAnimationFrame(animId);
-        }
-
-        function startVisualizerLoop() {
-            function draw() {
-                animId = requestAnimationFrame(draw);
-                if (!visCtx) return;
-                visCtx.clearRect(0, 0, visualizerCanvas.width, visualizerCanvas.height);
-
-                const bars = 32;
-                const barWidth = visualizerCanvas.width / bars;
-                for (let i = 0; i < bars; i++) {
-                    const height = isPlaying ? Math.random() * (visualizerCanvas.height * 0.8) + 10 : 5;
-                    const x = i * barWidth;
-                    const y = visualizerCanvas.height - height;
-
-                    const gradient = visCtx.createLinearGradient(0, 0, 0, visualizerCanvas.height);
-                    gradient.addColorStop(0, '#10b981');
-                    gradient.addColorStop(1, '#0284c7');
-
-                    visCtx.fillStyle = gradient;
-                    visCtx.fillRect(x + 2, y, barWidth - 4, height);
-                }
-            }
-            draw();
-        }
-
-        // --- SPOTIFY-STYLE YEARLY WRAP ---
-        function openWrapModal() {
-            document.getElementById('wrap-modal').classList.remove('hidden');
-            wrapSlideIndex = 0;
-            renderWrapSlide();
-        }
-
-        function closeWrapModal() {
-            document.getElementById('wrap-modal').classList.add('hidden');
-        }
-
-        const wrapSlides = [
-            {
-                title: "Your 2026 in Music",
-                subtitle: "What a journey! Let's unwrap your top listening moments.",
-                content: `<div class="py-8"><div class="w-28 h-28 rounded-full bg-emerald-500/20 border-2 border-emerald-500 text-emerald-400 flex items-center justify-center mx-auto text-4xl shadow-2xl animate-bounce"><i class="fa-solid fa-headphones"></i></div><h2 class="text-3xl font-extrabold mt-6">482 Hours</h2><p class="text-sm text-zinc-400 mt-2">Total time spent streaming on GentleBeats</p></div>`
-            },
-            {
-                title: "Top Genre",
-                subtitle: "You had a distinct musical palette this year.",
-                content: `<div class="py-6"><span class="bg-gradient-to-r from-emerald-500 to-teal-400 text-black text-xs font-bold px-4 py-1.5 rounded-full uppercase tracking-widest">#1 Genre</span><h2 class="text-4xl font-black mt-4 text-emerald-400">Synthwave & Chill</h2><p class="text-xs text-zinc-400 mt-3">You spent 42% of your time immersed in ambient and synth beats.</p></div>`
-            },
-            {
-                title: "Top Played Track",
-                subtitle: "Your absolute anthem of 2026:",
-                content: `<div class="py-4 space-y-4"><img src="https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=300&q=80" class="w-32 h-32 rounded-2xl object-cover mx-auto shadow-2xl border border-emerald-500/30"><h3 class="text-2xl font-bold">Midnight City Lights</h3><p class="text-xs text-zinc-400">Synthwave Collective • Played 142 times</p></div>`
-            },
-            {
-                title: "Your 2026 Badge",
-                subtitle: "Ready to share with friends!",
-                content: `<div class="bg-zinc-900 border border-emerald-500/30 p-6 rounded-2xl text-center space-y-3 shadow-2xl"><div class="flex items-center justify-center space-x-2 text-emerald-400"><i class="fa-solid fa-waveform"></i><span class="font-bold text-sm">GentleBeats Wrap 2026</span></div><h3 class="text-xl font-black text-white">ELITE AUDIOPHILE</h3><p class="text-[11px] text-zinc-400">Top 1% Global Listener • 482 Hours • 86 Artists</p><button onclick="navigator.clipboard?.writeText('GentleBeats Wrap 2026 — Elite Audiophile').then(() => showToast('Wrap summary copied to clipboard!')).catch(() => showToast('Copy is unavailable in this browser.', 'error'))" class="mt-2 bg-emerald-500 hover:bg-emerald-400 text-black text-xs font-bold px-4 py-2 rounded-full transition w-full">Share Card 🎉</button></div>`
-            }
-        ];
-
-        function renderWrapSlide() {
-            const slide = wrapSlides[wrapSlideIndex];
-            const container = document.getElementById('wrap-slide-container');
-            container.innerHTML = `
-                <div class="space-y-2 animate-fadeIn">
-                    <h2 class="text-2xl font-bold tracking-tight">${slide.title}</h2>
-                    <p class="text-xs text-zinc-400">${slide.subtitle}</p>
-                    ${slide.content}
                 </div>
             `;
 
-            const dotsContainer = document.getElementById('wrap-dots');
-            dotsContainer.innerHTML = wrapSlides.map((_, i) => `
-                <span class="w-2 h-2 rounded-full ${i === wrapSlideIndex ? 'bg-emerald-500' : 'bg-zinc-700'}"></span>
-            `).join('');
         }
 
-        function nextWrapSlide() {
-            if (wrapSlideIndex < wrapSlides.length - 1) {
-                wrapSlideIndex++;
-                renderWrapSlide();
-            }
+    }
+
+
+    /*
+       ============================================
+       DISPLAY RESULTS
+       ============================================
+    */
+
+    function displaySongs() {
+
+        const results =
+            document.getElementById("results");
+
+
+        results.innerHTML = "";
+
+
+        if (!songs.length) {
+
+            results.innerHTML = `
+                <div class="empty">
+                    No songs found.
+                </div>
+            `;
+
+            return;
+
         }
 
-        function prevWrapSlide() {
-            if (wrapSlideIndex > 0) {
-                wrapSlideIndex--;
-                renderWrapSlide();
-            }
+
+        songs.forEach((song, index) => {
+
+            const card =
+                document.createElement("div");
+
+
+            card.className = "song";
+
+
+            card.innerHTML = `
+
+                <img
+                    class="thumbnail"
+                    src="${song.image}"
+                    alt=""
+                >
+
+                <div class="song-info">
+
+                    <div class="song-title">
+                        ${escapeHTML(song.title)}
+                    </div>
+
+                    <div class="artist">
+                        ${escapeHTML(song.channel)}
+                    </div>
+
+                    <div class="buttons">
+
+                        <button
+                            class="play-btn"
+                            onclick="playSong(${index})"
+                        >
+                            ▶ Play
+                        </button>
+
+                        <button
+                            class="lyrics-btn"
+                            onclick="openLyrics(${index})"
+                        >
+                            Lyrics
+                        </button>
+
+                        <button
+                            class="video-btn"
+                            onclick="openVideo(${index})"
+                        >
+                            Video
+                        </button>
+
+                    </div>
+
+                </div>
+            `;
+
+
+            results.appendChild(card);
+
+        });
+
+    }
+
+
+    /*
+       ============================================
+       PLAY SONG
+       ============================================
+    */
+
+    function playSong(index) {
+
+        if (!isReady) {
+
+            alert(
+                "Music player is still loading..."
+            );
+
+            return;
+
         }
-    </script>
+
+
+        if (!songs[index]) return;
+
+
+        currentIndex = index;
+
+
+        const song = songs[index];
+
+
+        player.loadVideoById(song.id);
+
+
+        document.getElementById(
+            "now-title"
+        ).innerText = cleanTitle(song.title);
+
+
+        document.getElementById(
+            "now-artist"
+        ).innerText = song.channel;
+
+
+        document.getElementById(
+            "now-image"
+        ).src = song.image;
+
+
+        document.getElementById(
+            "playPause"
+        ).innerText = "⏸";
+
+    }
+
+
+    /*
+       ============================================
+       PLAY / PAUSE
+       ============================================
+    */
+
+    function togglePlay() {
+
+        if (!player) return;
+
+
+        const state =
+            player.getPlayerState();
+
+
+        if (
+            state ===
+            YT.PlayerState.PLAYING
+        ) {
+
+            player.pauseVideo();
+
+        }
+
+        else {
+
+            player.playVideo();
+
+        }
+
+    }
+
+
+    /*
+       ============================================
+       NEXT
+       ============================================
+    */
+
+    function nextSong() {
+
+        if (!songs.length) return;
+
+
+        let next =
+            currentIndex + 1;
+
+
+        if (next >= songs.length) {
+
+            next = 0;
+
+        }
+
+
+        playSong(next);
+
+    }
+
+
+    /*
+       ============================================
+       PREVIOUS
+       ============================================
+    */
+
+    function previousSong() {
+
+        if (!songs.length) return;
+
+
+        let previous =
+            currentIndex - 1;
+
+
+        if (previous < 0) {
+
+            previous =
+                songs.length - 1;
+
+        }
+
+
+        playSong(previous);
+
+    }
+
+
+    /*
+       ============================================
+       PROGRESS BAR
+       ============================================
+    */
+
+    setInterval(function() {
+
+        if (
+            !player ||
+            !isReady ||
+            currentIndex < 0
+        ) return;
+
+
+        const current =
+            player.getCurrentTime();
+
+
+        const duration =
+            player.getDuration();
+
+
+        if (!duration) return;
+
+
+        const percentage =
+            (current / duration) * 100;
+
+
+        document.getElementById(
+            "progress"
+        ).value = percentage;
+
+
+        document.getElementById(
+            "currentTime"
+        ).innerText =
+            formatTime(current);
+
+
+        document.getElementById(
+            "duration"
+        ).innerText =
+            formatTime(duration);
+
+    }, 500);
+
+
+    document.getElementById(
+        "progress"
+    ).addEventListener(
+        "input",
+        function() {
+
+            if (!player) return;
+
+
+            const duration =
+                player.getDuration();
+
+
+            const time =
+                (this.value / 100) *
+                duration;
+
+
+            player.seekTo(
+                time,
+                true
+            );
+
+        }
+    );
+
+
+    /*
+       ============================================
+       LYRICS
+       ============================================
+    */
+
+    function openLyrics(index) {
+
+        const song =
+            songs[index];
+
+
+        const query =
+            encodeURIComponent(
+                cleanTitle(song.title) +
+                " " +
+                song.channel +
+                " lyrics"
+            );
+
+
+        window.open(
+            "https://www.google.com/search?q=" +
+            query,
+            "_blank"
+        );
+
+    }
+
+
+    /*
+       ============================================
+       VIDEO
+       ============================================
+    */
+
+    function openVideo(index) {
+
+        const song =
+            songs[index];
+
+
+        window.open(
+            "https://www.youtube.com/watch?v=" +
+            song.id,
+            "_blank"
+        );
+
+    }
+
+
+    /*
+       ============================================
+       HELPERS
+       ============================================
+    */
+
+    function formatTime(seconds) {
+
+        seconds =
+            Math.floor(seconds || 0);
+
+
+        const minutes =
+            Math.floor(seconds / 60);
+
+
+        const remaining =
+            seconds % 60;
+
+
+        return minutes +
+            ":" +
+            String(remaining)
+                .padStart(2, "0");
+
+    }
+
+
+    function cleanTitle(title) {
+
+        return title
+            .replace(
+                /\(.*?\)/g,
+                ""
+            )
+            .replace(
+                /\[.*?\]/g,
+                ""
+            )
+            .trim();
+
+    }
+
+
+    function escapeHTML(value) {
+
+        const div =
+            document.createElement("div");
+
+
+        div.textContent =
+            value;
+
+
+        return div.innerHTML;
+
+    }
+
+
+    /*
+       ============================================
+       INITIAL SEARCH
+       ============================================
+    */
+
+    window.addEventListener(
+        "load",
+        function() {
+
+            searchYouTube("Drake");
+
+        }
+    );
+
+</script>
+
 </body>
 </html>
