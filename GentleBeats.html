@@ -530,9 +530,6 @@
         let isShuffle = false;
         let isRepeat = false;
 
-        let audioElement = new Audio();
-        audioElement.volume = 0.8;
-
         let wrapSlideIndex = 0;
 
         // --- INITIALIZATION ---
@@ -543,14 +540,6 @@
             renderLikedSongs();
             renderOfflineSongs();
             renderAIMix('All');
-
-            audioElement.addEventListener('timeupdate', updateProgress);
-            audioElement.addEventListener('ended', handleSongEnded);
-            audioElement.addEventListener('error', () => {
-                isPlaying = false;
-                updatePlayUI();
-                showToast('The audio could not be loaded. Check the connection or use a downloaded track.', 'error');
-            });
 
             initVisualizerCanvas();
             switchTab('home');
@@ -581,7 +570,10 @@
             });
             
             const targetTab = document.getElementById(`tab-${tabId}`);
-            if (targetTab) targetTab.classList.remove('hidden');
+            if (targetTab) {
+                targetTab.classList.remove('hidden');
+                if (tabId === 'search') setTimeout(() => document.getElementById('search-input')?.focus(), 0);
+            }
 
             const activeBtn = document.querySelector(`[data-tab="${tabId}"]`);
             if (activeBtn) {
@@ -749,7 +741,10 @@
             renderSongListHtml(filtered, 'search-results-list');
         }
 
-        function handleSearch(val) { renderSearchResults(val); }
+        function handleSearch(val) {
+            renderSearchResults(val);
+            if (val.trim()) switchTab('search');
+        }
 
         function renderLikedSongs() {
             const likedList = songs.filter(s => likedSongIds.includes(s.id));
@@ -785,100 +780,118 @@
         }
 
         // --- AUDIO PLAYER CONTROLS ---
-        function playSong(id) {
-            const song = songs.find(s => s.id === id);
-            if (!song) return;
+        // GentleBeats uses a local Web Audio engine for the demo tracks. This means
+        // Play/Search work even when the HTML is opened directly from a file:// URL,
+        // without depending on an external MP3 host.
+        let audioContext = null;
+        let masterGain = null;
+        let activeVoices = [];
+        let audioTimer = null;
+        let audioStartedAt = 0;
+        let audioPausedAt = 0;
+        let demoDuration = 30;
 
-            if (isOfflineMode && !offlineSongIds.includes(song.id)) {
-                showToast("Track not available offline! Connect to internet or download first.", "error");
-                return;
+        const genrePatterns = {
+            Chill:  [261.63, 329.63, 392.00, 493.88],
+            Focus:  [220.00, 261.63, 329.63, 392.00],
+            Party:  [261.63, 311.13, 392.00, 466.16],
+            Workout:[130.81, 164.81, 196.00, 246.94],
+            All:    [261.63, 293.66, 329.63, 392.00]
+        };
+
+        function ensureAudioEngine() {
+            if (!audioContext) {
+                const Ctx = window.AudioContext || window.webkitAudioContext;
+                if (!Ctx) throw new Error('Web Audio is not supported by this browser.');
+                audioContext = new Ctx();
+                masterGain = audioContext.createGain();
+                masterGain.gain.value = 0.18;
+                masterGain.connect(audioContext.destination);
             }
-
-            currentPlaylist = [song];
-            currentIndex = 0;
-            startAudioPlayback(song);
+            if (audioContext.state === 'suspended') return audioContext.resume();
+            return Promise.resolve();
         }
 
-        function playSongFromList(id) {
-            const song = songs.find(s => s.id === id);
-            if (!song) return;
-
-            if (isOfflineMode && !offlineSongIds.includes(song.id)) {
-                showToast("Track not available offline!", "error");
-                return;
-            }
-
-            currentPlaylist = [...songs];
-            currentIndex = currentPlaylist.findIndex(s => s.id === id);
-            startAudioPlayback(song);
-        }
-
-        function playPlaylist(list) {
-            if (list.length === 0) return;
-            currentPlaylist = [...list];
-            currentIndex = 0;
-            startAudioPlayback(currentPlaylist[0]);
-        }
-
-        function playLikedSongs() {
-            const list = songs.filter(s => likedSongIds.includes(s.id));
-            if (list.length === 0) { showToast("No liked songs to play.", "error"); return; }
-            playPlaylist(list);
-        }
-
-        async function playOfflineSongs() {
-            const list = songs.filter(s => offlineSongIds.includes(s.id));
-            if (list.length === 0) { showToast('No offline songs downloaded.', 'error'); return; }
-            isOfflineMode = true;
-            updateNetworkUI();
-            playPlaylist(list);
-        }
-
-        function updateNetworkUI() {
-            const dot = document.getElementById('network-dot');
-            const text = document.getElementById('network-text');
-            if (isOfflineMode) {
-                dot.className = 'w-2.5 h-2.5 rounded-full bg-sky-400 animate-pulse';
-                text.innerText = 'Offline Mode';
-            } else {
-                dot.className = 'w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse';
-                text.innerText = 'Online Mode';
+        function stopDemoVoices() {
+            activeVoices.forEach(v => {
+                try { v.osc.stop(); } catch (_) {}
+                try { v.gain.disconnect(); } catch (_) {}
+            });
+            activeVoices = [];
+            if (audioTimer) {
+                clearInterval(audioTimer);
+                audioTimer = null;
             }
         }
 
-        async function resolveAudioSource(song) {
-            if (isOfflineMode) {
-                const cached = await getOfflineTrack(song.id);
-                if (!cached) throw new Error('This track has not been downloaded for offline playback.');
-                return { url: URL.createObjectURL(cached), revoke: true };
-            }
-            return { url: song.audioUrl, revoke: false };
+        function createVoice(freq, start, duration, type='sine', volume=0.08) {
+            const osc = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+            osc.type = type;
+            osc.frequency.setValueAtTime(freq, start);
+            gain.gain.setValueAtTime(0.0001, start);
+            gain.gain.exponentialRampToValueAtTime(volume, start + 0.03);
+            gain.gain.exponentialRampToValueAtTime(0.0001, start + Math.max(0.08, duration - 0.04));
+            osc.connect(gain).connect(masterGain);
+            osc.start(start);
+            osc.stop(start + duration);
+            const voice = { osc, gain };
+            activeVoices.push(voice);
         }
 
-        let activeObjectUrl = null;
+        function scheduleDemoTrack(song, offset=0) {
+            stopDemoVoices();
+            const now = audioContext.currentTime + 0.04;
+            const notes = genrePatterns[song.genre] || genrePatterns.All;
+            const tempo = song.genre === 'Workout' || song.genre === 'Party' ? 0.28 : 0.42;
+            const end = now + demoDuration - offset;
 
-        async function startAudioPlayback(song) {
+            for (let t = 0; t < demoDuration - offset; t += tempo) {
+                const beat = Math.floor(t / tempo);
+                const root = notes[beat % notes.length];
+                createVoice(root, now + t, Math.min(tempo * 0.9, end - (now + t)), 'triangle', 0.055);
+                if (beat % 2 === 0) {
+                    createVoice(root * 2, now + t + tempo * 0.35, Math.min(tempo * 0.45, end - (now + t + tempo * 0.35)), 'sine', 0.025);
+                }
+                if (song.genre === 'Party' || song.genre === 'Workout') {
+                    createVoice(65.41, now + t, Math.min(0.10, end - (now + t)), 'square', 0.035);
+                }
+            }
+        }
+
+        function getElapsed() {
+            if (!audioContext || !isPlaying) return audioPausedAt;
+            return Math.min(demoDuration, audioPausedAt + (audioContext.currentTime - audioStartedAt));
+        }
+
+        function updateDemoProgress() {
+            if (!isPlaying) return;
+            const elapsed = getElapsed();
+            const pct = Math.min(100, (elapsed / demoDuration) * 100);
+            document.getElementById('progress-bar').style.width = `${pct}%`;
+            const mins = Math.floor(elapsed / 60);
+            const secs = Math.floor(elapsed % 60).toString().padStart(2, '0');
+            document.getElementById('current-time').innerText = `${mins}:${secs}`;
+            if (elapsed >= demoDuration) {
+                handleSongEnded();
+            }
+        }
+
+        async function startAudioPlayback(song, resumeOffset=0) {
             if (!song) return;
             try {
-                if (activeObjectUrl) {
-                    URL.revokeObjectURL(activeObjectUrl);
-                    activeObjectUrl = null;
-                }
-
-                const source = await resolveAudioSource(song);
-                if (source.revoke) activeObjectUrl = source.url;
-
-                audioElement.pause();
-                audioElement.src = source.url;
-                audioElement.load();
+                await ensureAudioEngine();
+                stopDemoVoices();
+                audioPausedAt = Math.max(0, Math.min(demoDuration - 0.1, resumeOffset || 0));
+                audioStartedAt = audioContext.currentTime;
+                scheduleDemoTrack(song, audioPausedAt);
 
                 document.getElementById('player-title').innerText = song.title;
                 document.getElementById('player-artist').innerText = song.artist;
                 document.getElementById('player-cover').src = song.cover;
-                document.getElementById('total-duration').innerText = `${Math.floor(song.duration / 60)}:${(song.duration % 60).toString().padStart(2, '0')}`;
+                document.getElementById('total-duration').innerText = `0:${demoDuration.toString().padStart(2, '0')}`;
                 document.getElementById('current-time').innerText = '0:00';
-                document.getElementById('progress-bar').style.width = '0%';
-
+                document.getElementById('progress-bar').style.width = `${(audioPausedAt / demoDuration) * 100}%`;
                 document.getElementById('vis-title').innerText = song.title;
                 document.getElementById('vis-artist').innerText = song.artist;
                 document.getElementById('vis-cover').src = song.cover;
@@ -888,34 +901,78 @@
                     ? `<i class="fa-solid fa-heart text-rose-500"></i>`
                     : `<i class="fa-regular fa-heart"></i>`;
 
-                await audioElement.play();
                 isPlaying = true;
                 updatePlayUI();
+                clearInterval(audioTimer);
+                audioTimer = setInterval(updateDemoProgress, 100);
+                showToast(`Playing ${song.title}`);
             } catch (error) {
                 isPlaying = false;
                 updatePlayUI();
                 console.error('Playback error:', error);
-                showToast(error.message || 'Unable to play this track. Check your internet connection.', 'error');
+                showToast(error.message || 'Unable to start playback.', 'error');
             }
         }
 
+        function playSong(id) {
+            const song = songs.find(s => s.id === id);
+            if (!song) return;
+            if (isOfflineMode && !offlineSongIds.includes(song.id)) {
+                showToast('Track not available offline! Connect to internet or download first.', 'error');
+                return;
+            }
+            currentPlaylist = [song];
+            currentIndex = 0;
+            startAudioPlayback(song);
+        }
+
+        function playSongFromList(id) {
+            const song = songs.find(s => s.id === id);
+            if (!song) return;
+            if (isOfflineMode && !offlineSongIds.includes(song.id)) {
+                showToast('Track not available offline!', 'error');
+                return;
+            }
+            currentPlaylist = [...songs];
+            currentIndex = currentPlaylist.findIndex(s => s.id === id);
+            startAudioPlayback(song);
+        }
+
+        function playPlaylist(list) {
+            if (!list.length) return;
+            currentPlaylist = [...list];
+            currentIndex = 0;
+            startAudioPlayback(currentPlaylist[0]);
+        }
+
+        function playLikedSongs() {
+            const list = songs.filter(s => likedSongIds.includes(s.id));
+            if (!list.length) { showToast('No liked songs to play.', 'error'); return; }
+            playPlaylist(list);
+        }
+
+        function playOfflineSongs() {
+            const list = songs.filter(s => offlineSongIds.includes(s.id));
+            if (!list.length) { showToast('No offline songs downloaded.', 'error'); return; }
+            isOfflineMode = true;
+            updateNetworkUI();
+            playPlaylist(list);
+        }
+
         async function togglePlay() {
-            if (!currentPlaylist.length) { await playSong(songs[0].id); return; }
+            if (!currentPlaylist.length) {
+                await playSong(songs[0].id);
+                return;
+            }
             if (isPlaying) {
-                audioElement.pause();
+                audioPausedAt = getElapsed();
                 isPlaying = false;
+                stopDemoVoices();
                 updatePlayUI();
                 return;
             }
-            try {
-                await audioElement.play();
-                isPlaying = true;
-                updatePlayUI();
-            } catch (error) {
-                isPlaying = false;
-                updatePlayUI();
-                showToast('Playback could not start. Check your connection or download the track first.', 'error');
-            }
+            const song = currentPlaylist[currentIndex];
+            await startAudioPlayback(song, audioPausedAt);
         }
 
         function updatePlayUI() {
@@ -926,14 +983,16 @@
         }
 
         function playNext() {
-            if (currentPlaylist.length === 0) return;
+            if (!currentPlaylist.length) return;
             currentIndex = isShuffle ? Math.floor(Math.random() * currentPlaylist.length) : (currentIndex + 1) % currentPlaylist.length;
+            audioPausedAt = 0;
             startAudioPlayback(currentPlaylist[currentIndex]);
         }
 
         function playPrev() {
-            if (currentPlaylist.length === 0) return;
+            if (!currentPlaylist.length) return;
             currentIndex = (currentIndex - 1 + currentPlaylist.length) % currentPlaylist.length;
+            audioPausedAt = 0;
             startAudioPlayback(currentPlaylist[currentIndex]);
         }
 
@@ -941,40 +1000,38 @@
             isShuffle = !isShuffle;
             const btn = document.getElementById('player-shuffle-btn');
             btn.className = isShuffle ? "text-emerald-400 text-sm transition" : "text-zinc-400 hover:text-white text-sm transition";
-            showToast(isShuffle ? "Shuffle Enabled" : "Shuffle Disabled");
+            showToast(isShuffle ? 'Shuffle Enabled' : 'Shuffle Disabled');
         }
 
         function toggleRepeat() {
             isRepeat = !isRepeat;
             const btn = document.getElementById('player-repeat-btn');
             btn.className = isRepeat ? "text-emerald-400 text-sm transition" : "text-zinc-400 hover:text-white text-sm transition";
-            showToast(isRepeat ? "Repeat Enabled" : "Repeat Disabled");
+            showToast(isRepeat ? 'Repeat Enabled' : 'Repeat Disabled');
         }
 
         function updateProgress() {
-            if (!audioElement.duration) return;
-            const pct = (audioElement.currentTime / audioElement.duration) * 100;
-            document.getElementById('progress-bar').style.width = `${pct}%`;
-            
-            const mins = Math.floor(audioElement.currentTime / 60);
-            const secs = Math.floor(audioElement.currentTime % 60).toString().padStart(2, '0');
-            document.getElementById('current-time').innerText = `${mins}:${secs}`;
+            updateDemoProgress();
         }
 
         function seekTrack(e) {
             const rect = e.currentTarget.getBoundingClientRect();
-            const pos = (e.clientX - rect.left) / rect.width;
-            if (audioElement.duration) {
-                audioElement.currentTime = pos * audioElement.duration;
-            }
+            const pos = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+            audioPausedAt = pos * demoDuration;
+            document.getElementById('progress-bar').style.width = `${pos * 100}%`;
+            const mins = Math.floor(audioPausedAt / 60);
+            const secs = Math.floor(audioPausedAt % 60).toString().padStart(2, '0');
+            document.getElementById('current-time').innerText = `${mins}:${secs}`;
+            if (isPlaying && currentPlaylist.length) startAudioPlayback(currentPlaylist[currentIndex], audioPausedAt);
         }
 
         function setVolume(val) {
-            audioElement.volume = val / 100;
+            if (masterGain) masterGain.gain.value = (val / 100) * 0.25;
         }
 
         function handleSongEnded() {
             if (isRepeat && currentPlaylist.length > 0) {
+                audioPausedAt = 0;
                 startAudioPlayback(currentPlaylist[currentIndex]);
             } else {
                 playNext();
@@ -1017,7 +1074,7 @@
                 showToast('Removed from Offline Storage', 'error');
             } else {
                 try {
-                    showToast('Downloading track...');
+                    showToast('Saving track for Offline Mode...');
                     const response = await fetch(song.audioUrl, { mode: 'cors' });
                     if (!response.ok) throw new Error(`Download failed (${response.status})`);
                     const blob = await response.blob();
