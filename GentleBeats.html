@@ -1,56 +1,1125 @@
-// ======================================================
-// GENTLEBEATS MUSIC APPLICATION
-// ======================================================
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>GentleBeats</title>
+
+<style>
+
+*{
+    box-sizing:border-box;
+    margin:0;
+    padding:0;
+}
+
+:root{
+    --bg:#07090d;
+    --card:#11151d;
+    --card2:#181d27;
+    --green:#b8ff3d;
+    --white:#ffffff;
+    --gray:#969daa;
+    --border:#252b36;
+}
+
+body{
+    background:
+        radial-gradient(
+            circle at 80% 0%,
+            rgba(184,255,61,.14),
+            transparent 30%
+        ),
+        var(--bg);
+
+    color:var(--white);
+    font-family:Arial,Helvetica,sans-serif;
+
+    padding-bottom:120px;
+}
 
 
-// ------------------------------------------------------
-// DOM
-// ------------------------------------------------------
+/* =========================
+   NAVBAR
+========================= */
+
+header{
+    height:75px;
+
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+
+    padding:0 5%;
+
+    position:sticky;
+    top:0;
+    z-index:100;
+
+    background:rgba(7,9,13,.92);
+    backdrop-filter:blur(20px);
+
+    border-bottom:1px solid var(--border);
+}
+
+.logo{
+    display:flex;
+    align-items:center;
+    gap:10px;
+
+    font-size:25px;
+    font-weight:900;
+}
+
+.logo b{
+    color:var(--green);
+}
+
+.logo-icon{
+    width:38px;
+    height:38px;
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+
+    border-radius:12px;
+
+    background:var(--green);
+    color:#000;
+
+    font-size:23px;
+}
+
+
+.search{
+    display:flex;
+
+    width:45%;
+    max-width:550px;
+
+    background:var(--card);
+
+    border:1px solid var(--border);
+
+    border-radius:30px;
+
+    overflow:hidden;
+}
+
+.search input{
+    flex:1;
+
+    padding:14px 20px;
+
+    border:none;
+    outline:none;
+
+    background:transparent;
+
+    color:white;
+
+    font-size:15px;
+}
+
+.search button{
+    width:55px;
+
+    border:none;
+
+    background:var(--green);
+
+    cursor:pointer;
+
+    font-size:18px;
+}
+
+
+nav{
+    display:flex;
+    gap:25px;
+}
+
+nav a{
+    color:var(--gray);
+    text-decoration:none;
+
+    font-size:14px;
+}
+
+nav a:hover{
+    color:white;
+}
+
+
+/* =========================
+   HERO
+========================= */
+
+.hero{
+    width:90%;
+    max-width:1200px;
+
+    min-height:460px;
+
+    margin:auto;
+
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+}
+
+.hero-text{
+    max-width:650px;
+}
+
+.small-title{
+    color:var(--green);
+
+    letter-spacing:4px;
+
+    font-size:12px;
+
+    font-weight:bold;
+}
+
+.hero h1{
+    font-size:clamp(55px,8vw,100px);
+
+    line-height:.9;
+
+    letter-spacing:-6px;
+
+    margin:20px 0;
+}
+
+.hero h1 span{
+    color:var(--green);
+}
+
+.hero p{
+    color:var(--gray);
+
+    line-height:1.7;
+
+    font-size:17px;
+
+    max-width:580px;
+}
+
+.hero-buttons{
+    margin-top:30px;
+
+    display:flex;
+    gap:12px;
+}
+
+.btn{
+    padding:14px 24px;
+
+    border-radius:30px;
+
+    cursor:pointer;
+
+    font-weight:bold;
+
+    border:none;
+}
+
+.btn-primary{
+    background:var(--green);
+    color:#000;
+}
+
+.btn-secondary{
+    background:transparent;
+    color:white;
+
+    border:1px solid var(--border);
+}
+
+
+/* =========================
+   RECORD
+========================= */
+
+.record{
+    width:280px;
+    height:280px;
+
+    border-radius:50%;
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+
+    background:
+        repeating-radial-gradient(
+            circle,
+            #15191f 0px,
+            #15191f 8px,
+            #20252d 9px,
+            #20252d 11px
+        );
+
+    box-shadow:
+        0 0 90px rgba(184,255,61,.18);
+
+    animation:rotate 8s linear infinite;
+
+    animation-play-state:paused;
+}
+
+.record.playing{
+    animation-play-state:running;
+}
+
+.record-center{
+    width:90px;
+    height:90px;
+
+    border-radius:50%;
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+
+    background:var(--green);
+
+    color:#000;
+
+    font-size:40px;
+}
+
+@keyframes rotate{
+
+    from{
+        transform:rotate(0);
+    }
+
+    to{
+        transform:rotate(360deg);
+    }
+
+}
+
+
+/* =========================
+   SECTION
+========================= */
+
+.section{
+    width:90%;
+    max-width:1200px;
+
+    margin:50px auto;
+}
+
+.section-header{
+    display:flex;
+
+    align-items:end;
+    justify-content:space-between;
+
+    border-bottom:1px solid var(--border);
+
+    padding-bottom:15px;
+
+    margin-bottom:25px;
+}
+
+.section-header h2{
+    font-size:30px;
+
+    margin-top:8px;
+}
+
+.status{
+    color:var(--gray);
+    font-size:13px;
+}
+
+
+/* =========================
+   SONG GRID
+========================= */
+
+.song-grid{
+    display:grid;
+
+    grid-template-columns:
+        repeat(4,1fr);
+
+    gap:18px;
+}
+
+.song{
+    background:
+        linear-gradient(
+            145deg,
+            var(--card),
+            #0c0f14
+        );
+
+    border:1px solid var(--border);
+
+    border-radius:18px;
+
+    padding:12px;
+
+    transition:.2s;
+}
+
+.song:hover{
+    transform:translateY(-5px);
+
+    border-color:
+        rgba(184,255,61,.5);
+}
+
+.song img{
+    width:100%;
+
+    aspect-ratio:1;
+
+    object-fit:cover;
+
+    border-radius:12px;
+
+    background:#222;
+}
+
+.song h3{
+    font-size:16px;
+
+    margin-top:12px;
+
+    white-space:nowrap;
+
+    overflow:hidden;
+
+    text-overflow:ellipsis;
+}
+
+.song p{
+    color:var(--gray);
+
+    font-size:14px;
+
+    margin-top:5px;
+}
+
+.song-buttons{
+    display:flex;
+
+    gap:6px;
+
+    margin-top:12px;
+}
+
+.song-buttons button{
+    flex:1;
+
+    padding:9px 5px;
+
+    border-radius:9px;
+
+    border:1px solid var(--border);
+
+    background:var(--card2);
+
+    color:white;
+
+    cursor:pointer;
+}
+
+.song-buttons button:hover{
+    border-color:var(--green);
+}
+
+.song-buttons .play{
+    background:var(--green);
+
+    color:#000;
+
+    border:none;
+}
+
+
+/* =========================
+   PLAYER
+========================= */
+
+.player{
+    position:fixed;
+
+    left:0;
+    right:0;
+    bottom:0;
+
+    min-height:100px;
+
+    z-index:200;
+
+    background:rgba(14,17,23,.97);
+
+    border-top:1px solid var(--border);
+
+    backdrop-filter:blur(20px);
+
+    display:grid;
+
+    grid-template-columns:
+        1fr 1.5fr 1fr;
+
+    align-items:center;
+
+    gap:20px;
+
+    padding:10px 3%;
+}
+
+.now{
+    display:flex;
+
+    align-items:center;
+
+    gap:12px;
+}
+
+.now img{
+    width:60px;
+    height:60px;
+
+    object-fit:cover;
+
+    border-radius:10px;
+}
+
+.now small{
+    display:block;
+
+    color:var(--gray);
+
+    margin-top:5px;
+}
+
+
+.controls{
+    width:100%;
+}
+
+.control-buttons{
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    gap:15px;
+}
+
+.control-buttons button{
+    background:none;
+
+    border:none;
+
+    color:white;
+
+    cursor:pointer;
+
+    font-size:17px;
+}
+
+.play-main{
+    width:45px;
+    height:45px;
+
+    border-radius:50%;
+
+    background:var(--green) !important;
+
+    color:#000 !important;
+}
+
+.progress{
+    display:flex;
+
+    align-items:center;
+
+    gap:10px;
+
+    color:var(--gray);
+
+    font-size:11px;
+}
+
+.progress input{
+    flex:1;
+}
+
+.volume{
+    display:flex;
+
+    justify-content:flex-end;
+
+    align-items:center;
+
+    gap:8px;
+}
+
+.volume input{
+    width:120px;
+}
+
+
+/* =========================
+   MODAL
+========================= */
+
+.modal{
+    position:fixed;
+
+    inset:0;
+
+    z-index:500;
+
+    background:rgba(0,0,0,.8);
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    padding:20px;
+}
+
+.modal.hidden{
+    display:none;
+}
+
+.modal-box{
+    width:600px;
+    max-width:100%;
+
+    max-height:80vh;
+
+    overflow:auto;
+
+    background:var(--card);
+
+    border:1px solid var(--border);
+
+    border-radius:20px;
+
+    padding:30px;
+
+    position:relative;
+}
+
+.modal-box h2{
+    margin-bottom:20px;
+}
+
+.modal-box pre{
+    white-space:pre-wrap;
+
+    color:#ddd;
+
+    line-height:1.8;
+
+    font-family:Arial;
+}
+
+.close{
+    position:absolute;
+
+    right:15px;
+    top:10px;
+
+    background:none;
+
+    border:none;
+
+    color:white;
+
+    font-size:30px;
+
+    cursor:pointer;
+}
+
+
+/* =========================
+   MOBILE
+========================= */
+
+@media(max-width:900px){
+
+    header{
+        height:auto;
+
+        padding:15px;
+
+        flex-wrap:wrap;
+    }
+
+    .search{
+        order:3;
+
+        width:100%;
+
+        max-width:none;
+    }
+
+    nav{
+        display:none;
+    }
+
+    .hero{
+        min-height:500px;
+    }
+
+    .record{
+        width:200px;
+        height:200px;
+    }
+
+    .song-grid{
+        grid-template-columns:
+            repeat(2,1fr);
+    }
+
+    .player{
+        grid-template-columns:
+            1fr 1.5fr;
+    }
+
+    .volume{
+        display:none;
+    }
+
+}
+
+
+@media(max-width:600px){
+
+    body{
+        padding-bottom:145px;
+    }
+
+    .hero{
+        min-height:450px;
+    }
+
+    .record{
+        display:none;
+    }
+
+    .hero h1{
+        font-size:60px;
+    }
+
+    .song-grid{
+        grid-template-columns:
+            repeat(2,1fr);
+
+        gap:10px;
+    }
+
+    .player{
+        grid-template-columns:1fr;
+
+        min-height:140px;
+    }
+
+    .now{
+        justify-content:center;
+    }
+
+}
+
+</style>
+
+</head>
+
+
+<body>
+
+
+<!-- ==================================================
+     NAVIGATION
+================================================== -->
+
+<header>
+
+    <div class="logo">
+
+        <div class="logo-icon">
+            ♪
+        </div>
+
+        Gentle<b>Beats</b>
+
+    </div>
+
+
+    <div class="search">
+
+        <input
+            id="searchInput"
+            placeholder="Search songs or artists..."
+        >
+
+        <button
+            onclick="searchMusic()"
+        >
+            🔎
+        </button>
+
+    </div>
+
+
+    <nav>
+
+        <a href="#home">
+            Home
+        </a>
+
+        <a href="#discover">
+            Discover
+        </a>
+
+        <a href="#favorites">
+            Favorites
+        </a>
+
+    </nav>
+
+</header>
+
+
+<!-- ==================================================
+     HERO
+================================================== -->
+
+<section
+    id="home"
+    class="hero"
+>
+
+    <div class="hero-text">
+
+        <div class="small-title">
+            WELCOME TO GENTLEBEATS
+        </div>
+
+        <h1>
+
+            Your music.
+            <span>
+                Your mood.
+            </span>
+
+        </h1>
+
+        <p>
+
+            Discover music, listen to available
+            previews, find your favourite artists
+            and build your personal GentleBeats
+            collection.
+
+        </p>
+
+
+        <div class="hero-buttons">
+
+            <button
+                class="btn btn-primary"
+                onclick="exploreMusic()"
+            >
+                Explore Music
+            </button>
+
+            <button
+                class="btn btn-secondary"
+                onclick="document
+                    .getElementById('discover')
+                    .scrollIntoView({
+                        behavior:'smooth'
+                    })"
+            >
+                Browse Library
+            </button>
+
+        </div>
+
+    </div>
+
+
+    <div class="record" id="record">
+
+        <div class="record-center">
+            ♪
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- ==================================================
+     DISCOVER
+================================================== -->
+
+<section
+    id="discover"
+    class="section"
+>
+
+    <div class="section-header">
+
+        <div>
+
+            <div class="small-title">
+                DISCOVER
+            </div>
+
+            <h2>
+                Search Music
+            </h2>
+
+        </div>
+
+        <div
+            id="status"
+            class="status"
+        >
+        </div>
+
+    </div>
+
+
+    <div
+        id="songs"
+        class="song-grid"
+    >
+    </div>
+
+</section>
+
+
+<!-- ==================================================
+     FAVORITES
+================================================== -->
+
+<section
+    id="favorites"
+    class="section"
+>
+
+    <div class="section-header">
+
+        <div>
+
+            <div class="small-title">
+                YOUR MUSIC
+            </div>
+
+            <h2>
+                Favorites
+            </h2>
+
+        </div>
+
+    </div>
+
+
+    <div
+        id="favoritesGrid"
+        class="song-grid"
+    >
+    </div>
+
+</section>
+
+
+<!-- ==================================================
+     LYRICS
+================================================== -->
+
+<div
+    id="lyricsModal"
+    class="modal hidden"
+>
+
+    <div class="modal-box">
+
+        <button
+            class="close"
+            onclick="closeLyrics()"
+        >
+            ×
+        </button>
+
+        <h2 id="lyricsTitle">
+            Lyrics
+        </h2>
+
+        <pre id="lyrics">
+        </pre>
+
+    </div>
+
+</div>
+
+
+<!-- ==================================================
+     PLAYER
+================================================== -->
+
+<footer class="player">
+
+    <div class="now">
+
+        <img
+            id="playerCover"
+            src="https://placehold.co/600x600/11151d/b8ff3d?text=♪"
+        >
+
+        <div>
+
+            <strong id="playerTitle">
+                Nothing playing
+            </strong>
+
+            <small id="playerArtist">
+                Choose a song
+            </small>
+
+        </div>
+
+    </div>
+
+
+    <div class="controls">
+
+        <div class="control-buttons">
+
+            <button onclick="toggleShuffle()">
+                🔀
+            </button>
+
+            <button onclick="previousSong()">
+                ⏮
+            </button>
+
+            <button
+                id="playButton"
+                class="play-main"
+                onclick="togglePlay()"
+            >
+                ▶
+            </button>
+
+            <button onclick="nextSong()">
+                ⏭
+            </button>
+
+            <button onclick="toggleRepeat()">
+                🔁
+            </button>
+
+        </div>
+
+
+        <div class="progress">
+
+            <span id="currentTime">
+                0:00
+            </span>
+
+            <input
+                id="progress"
+                type="range"
+                min="0"
+                max="100"
+                value="0"
+            >
+
+            <span id="duration">
+                0:00
+            </span>
+
+        </div>
+
+    </div>
+
+
+    <div class="volume">
+
+        🔊
+
+        <input
+            id="volume"
+            type="range"
+            min="0"
+            max="1"
+            step=".01"
+            value=".8"
+        >
+
+    </div>
+
+</footer>
+
+
+<!-- ==================================================
+     AUDIO
+================================================== -->
+
+<audio
+    id="audio"
+    preload="metadata"
+></audio>
+
+
+<script>
+
+
+/* =====================================================
+   GLOBAL VARIABLES
+===================================================== */
+
+let songs = [];
+
+let currentIndex = -1;
+
+let shuffle = false;
+
+let repeat = false;
+
+let favorites =
+    JSON.parse(
+        localStorage.getItem(
+            "gentlebeatsFavorites"
+        )
+    ) || [];
+
 
 const audio =
     document.getElementById("audio");
 
+const songContainer =
+    document.getElementById("songs");
+
+const status =
+    document.getElementById("status");
+
 const searchInput =
     document.getElementById("searchInput");
-
-const searchButton =
-    document.getElementById("searchButton");
-
-const searchResults =
-    document.getElementById("searchResults");
-
-const localSongs =
-    document.getElementById("localSongs");
-
-const searchStatus =
-    document.getElementById("searchStatus");
-
-const playButton =
-    document.getElementById("playButton");
-
-const previousButton =
-    document.getElementById("previousButton");
-
-const nextButton =
-    document.getElementById("nextButton");
-
-const shuffleButton =
-    document.getElementById("shuffleButton");
-
-const repeatButton =
-    document.getElementById("repeatButton");
-
-const progress =
-    document.getElementById("progress");
-
-const currentTime =
-    document.getElementById("currentTime");
-
-const duration =
-    document.getElementById("duration");
-
-const volume =
-    document.getElementById("volume");
 
 const playerTitle =
     document.getElementById("playerTitle");
@@ -61,722 +1130,499 @@ const playerArtist =
 const playerCover =
     document.getElementById("playerCover");
 
+const playButton =
+    document.getElementById("playButton");
 
-// ------------------------------------------------------
-// STATE
-// ------------------------------------------------------
+const record =
+    document.getElementById("record");
 
-let localQueue = [];
+const progress =
+    document.getElementById("progress");
 
-let externalQueue = [];
+const volume =
+    document.getElementById("volume");
 
-let currentQueue = [];
+const currentTime =
+    document.getElementById("currentTime");
 
-let currentIndex = -1;
-
-let shuffle = false;
-
-let repeat = false;
+const duration =
+    document.getElementById("duration");
 
 
-// ------------------------------------------------------
-// FORMAT TIME
-// ------------------------------------------------------
+/* =====================================================
+   FORMAT TIME
+===================================================== */
 
-function formatTime(seconds) {
+function formatTime(seconds){
 
-    if (!Number.isFinite(seconds)) {
+    if(
+        !Number.isFinite(seconds)
+    ){
 
         return "0:00";
 
     }
 
     const minutes =
-        Math.floor(seconds / 60);
+        Math.floor(
+            seconds / 60
+        );
 
-    const secs =
-        Math.floor(seconds % 60);
+    const secondsPart =
+        Math.floor(
+            seconds % 60
+        );
 
     return (
         minutes +
         ":" +
-        String(secs).padStart(2, "0")
+        String(
+            secondsPart
+        ).padStart(
+            2,
+            "0"
+        )
     );
+
 }
 
 
-// ------------------------------------------------------
-// ESCAPE HTML
-// ------------------------------------------------------
+/* =====================================================
+   SEARCH MUSIC
+===================================================== */
 
-function escapeHTML(value) {
+async function searchMusic(){
 
-    return String(value ?? "")
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;")
-        .replaceAll("'", "&#039;");
-}
+    const query =
+        searchInput.value.trim();
 
 
-// ------------------------------------------------------
-// LOCAL SONG CARD
-// ------------------------------------------------------
-
-function createLocalCard(song) {
-
-    return `
-
-        <article class="music-card">
-
-            <img
-                class="cover"
-                src="${escapeHTML(
-                    song.cover ||
-                    "/assets/gentle-default.svg"
-                )}"
-                alt="Album cover"
-            >
-
-            <div class="song-title">
-                ${escapeHTML(song.title)}
-            </div>
-
-            <div class="song-artist">
-                ${escapeHTML(song.artist)}
-            </div>
-
-            <div class="song-album">
-                ${escapeHTML(song.album || song.genre || "")}
-            </div>
-
-            <div class="card-buttons">
-
-                <button
-                    onclick="playLocal(${song.id})"
-                >
-                    ▶ Play
-                </button>
-
-                <button
-                    onclick="showLyrics(${song.id})"
-                >
-                    Lyrics
-                </button>
-
-                ${
-                    song.downloadable
-                    ?
-
-                    `<a
-                        class="download"
-                        href="/download/${encodeURIComponent(
-                            song.audio.split("/").pop()
-                        )}"
-                        download
-                    >
-                        <button>
-                            ↓
-                        </button>
-                    </a>`
-
-                    :
-
-                    ""
-                }
-
-            </div>
-
-        </article>
-
-    `;
-}
-
-
-// ------------------------------------------------------
-// EXTERNAL SONG CARD
-// ------------------------------------------------------
-
-function createExternalCard(song) {
-
-    const cover =
-        song.artworkUrl100 ||
-        "/assets/gentle-default.svg";
-
-    const title =
-        song.trackName ||
-        "Unknown title";
-
-    const artist =
-        song.artistName ||
-        "Unknown artist";
-
-    const album =
-        song.collectionName ||
-        "";
-
-
-    return `
-
-        <article class="music-card">
-
-            <img
-                class="cover"
-                src="${escapeHTML(cover)}"
-                alt="Album artwork"
-            >
-
-            <div class="song-title">
-                ${escapeHTML(title)}
-            </div>
-
-            <div class="song-artist">
-                ${escapeHTML(artist)}
-            </div>
-
-            <div class="song-album">
-                ${escapeHTML(album)}
-            </div>
-
-            <div class="card-buttons">
-
-                ${
-                    song.previewUrl
-
-                    ?
-
-                    `<button
-                        onclick="playExternal(${song.trackId})"
-                    >
-                        ▶ Preview
-                    </button>`
-
-                    :
-
-                    `<button disabled>
-                        No preview
-                    </button>`
-                }
-
-                <a
-                    class="download"
-                    href="${escapeHTML(
-                        song.trackViewUrl || "#"
-                    )}"
-                    target="_blank"
-                >
-
-                    <button>
-                        Open
-                    </button>
-
-                </a>
-
-            </div>
-
-        </article>
-
-    `;
-}
-
-
-// ------------------------------------------------------
-// LOAD LOCAL SONGS
-// ------------------------------------------------------
-
-async function loadLocalSongs(query = "") {
-
-    try {
-
-        const response =
-            await fetch(
-                `/api/songs?q=${encodeURIComponent(query)}`
-            );
-
-        if (!response.ok) {
-
-            throw new Error(
-                "Unable to load local songs"
-            );
-
-        }
-
-        localQueue =
-            await response.json();
-
-        localSongs.innerHTML =
-            localQueue.length
-
-            ?
-
-            localQueue
-                .map(createLocalCard)
-                .join("")
-
-            :
-
-            `
-                <p>
-                    No songs in your catalogue yet.
-                </p>
-            `;
-
-    }
-
-    catch (error) {
-
-        console.error(error);
-
-        localSongs.innerHTML = `
-            <p>
-                Could not load your GentleBeats
-                catalogue.
-            </p>
-        `;
-
-    }
-}
-
-
-// ------------------------------------------------------
-// SEARCH REAL MUSIC METADATA
-// ------------------------------------------------------
-
-async function searchMusic(query) {
-
-    if (!query.trim()) {
+    if(!query){
 
         return;
 
     }
 
 
-    searchStatus.textContent =
+    status.innerText =
         "Searching...";
 
 
-    try {
+    try{
+
+        const url =
+            "https://itunes.apple.com/search?" +
+
+            new URLSearchParams({
+
+                term:query,
+
+                media:"music",
+
+                entity:"song",
+
+                limit:"40"
+
+            });
+
 
         const response =
-
-            await fetch(
-
-                "https://itunes.apple.com/search?" +
-
-                new URLSearchParams({
-
-                    term: query,
-
-                    media: "music",
-
-                    entity: "song",
-
-                    limit: "30"
-
-                })
-
-            );
-
-
-        if (!response.ok) {
-
-            throw new Error(
-                "Music search failed"
-            );
-
-        }
+            await fetch(url);
 
 
         const data =
             await response.json();
 
 
-        externalQueue =
-            data.results.filter(
-                song => song.previewUrl
-            );
+        songs =
+            data.results;
 
 
-        searchResults.innerHTML =
-
-            externalQueue.length
-
-            ?
-
-            externalQueue
-                .map(createExternalCard)
-                .join("")
-
-            :
-
-            `
-                <p>
-                    No playable previews found.
-                </p>
-            `;
-
-
-        searchStatus.textContent =
+        status.innerText =
             `${data.resultCount} results`;
+
+
+        displaySongs();
 
     }
 
-    catch (error) {
+    catch(error){
 
         console.error(error);
 
-        searchStatus.textContent =
-            "Search unavailable";
-
-        searchResults.innerHTML = `
-            <p>
-                The music catalogue could not
-                be reached right now.
-            </p>
-        `;
+        status.innerText =
+            "Search failed";
 
     }
 
 }
 
 
-// ------------------------------------------------------
-// PLAY LOCAL SONG
-// ------------------------------------------------------
+/* =====================================================
+   DISPLAY SONGS
+===================================================== */
 
-function playLocal(songId) {
+function displaySongs(){
 
-    currentQueue =
-        localQueue;
-
-    currentIndex =
-        localQueue.findIndex(
-            song => song.id === songId
-        );
+    songContainer.innerHTML =
+        "";
 
 
-    if (currentIndex === -1) {
+    songs.forEach(
+        (song,index)=>{
 
-        return;
+            const artwork =
+                song.artworkUrl100 ||
 
-    }
-
-
-    const song =
-        localQueue[currentIndex];
+                "https://placehold.co/600x600/11151d/b8ff3d?text=♪";
 
 
-    audio.src =
-        song.audio;
+            const favorite =
+                favorites.includes(
+                    song.trackId
+                );
 
 
-    playerTitle.textContent =
-        song.title;
+            const card =
+                document.createElement(
+                    "div"
+                );
 
 
-    playerArtist.textContent =
-        song.artist;
+            card.className =
+                "song";
 
 
-    playerCover.src =
-        song.cover ||
-        "/assets/gentle-default.svg";
+            card.innerHTML = `
+
+                <img
+                    src="${artwork}"
+                >
+
+                <h3>
+                    ${escapeHTML(
+                        song.trackName ||
+                        "Unknown Song"
+                    )}
+                </h3>
+
+                <p>
+                    ${escapeHTML(
+                        song.artistName ||
+                        "Unknown Artist"
+                    )}
+                </p>
+
+                <div class="song-buttons">
+
+                    <button
+                        class="play"
+                        onclick="playSong(${index})"
+                    >
+                        ▶ Play
+                    </button>
+
+                    <button
+                        onclick="favoriteSong(${index})"
+                    >
+                        ${favorite ? "♥" : "♡"}
+                    </button>
+
+                </div>
+
+            `;
 
 
-    audio.play()
-        .then(() => {
+            songContainer.appendChild(
+                card
+            );
 
-            playButton.textContent =
-                "Ⅱ";
-
-        })
-        .catch(error => {
-
-            console.error(error);
-
-        });
+        }
+    );
 
 }
 
 
-// ------------------------------------------------------
-// PLAY EXTERNAL PREVIEW
-// ------------------------------------------------------
+/* =====================================================
+   PLAY SONG
+===================================================== */
 
-function playExternal(trackId) {
+function playSong(index){
 
-    currentQueue =
-        externalQueue;
-
-
-    currentIndex =
-        externalQueue.findIndex(
-            song => song.trackId === trackId
-        );
+    const song =
+        songs[index];
 
 
-    if (currentIndex === -1) {
+    if(!song){
 
         return;
 
     }
 
 
-    const song =
-        externalQueue[currentIndex];
+    if(!song.previewUrl){
+
+        alert(
+            "This song does not have a playable preview."
+        );
+
+        return;
+
+    }
+
+
+    currentIndex =
+        index;
 
 
     audio.src =
         song.previewUrl;
 
 
-    playerTitle.textContent =
-        song.trackName;
+    audio.play()
+        .then(()=>{
+
+            playButton.innerText =
+                "Ⅱ";
+
+            record.classList.add(
+                "playing"
+            );
+
+        });
 
 
-    playerArtist.textContent =
-        song.artistName;
+    playerTitle.innerText =
+        song.trackName ||
+        "Unknown Song";
+
+
+    playerArtist.innerText =
+        song.artistName ||
+        "Unknown Artist";
 
 
     playerCover.src =
         song.artworkUrl100 ||
-        "/assets/gentle-default.svg";
 
-
-    audio.play()
-        .then(() => {
-
-            playButton.textContent =
-                "Ⅱ";
-
-        })
-        .catch(error => {
-
-            console.error(error);
-
-        });
+        "https://placehold.co/600x600/11151d/b8ff3d?text=♪";
 
 }
 
 
-// ------------------------------------------------------
-// PLAY / PAUSE
-// ------------------------------------------------------
+/* =====================================================
+   PLAY / PAUSE
+===================================================== */
 
-playButton.addEventListener(
-    "click",
-    () => {
+function togglePlay(){
 
-        if (!audio.src) {
+    if(!audio.src){
 
-            return;
+        if(songs.length){
 
-        }
-
-
-        if (audio.paused) {
-
-            audio.play();
-
-            playButton.textContent =
-                "Ⅱ";
+            playSong(0);
 
         }
-
-        else {
-
-            audio.pause();
-
-            playButton.textContent =
-                "▶";
-
-        }
-
-    }
-);
-
-
-// ------------------------------------------------------
-// NEXT
-// ------------------------------------------------------
-
-function nextSong() {
-
-    if (!currentQueue.length) {
 
         return;
 
     }
 
 
-    if (shuffle) {
+    if(audio.paused){
 
-        currentIndex =
+        audio.play();
+
+        playButton.innerText =
+            "Ⅱ";
+
+        record.classList.add(
+            "playing"
+        );
+
+    }
+
+    else{
+
+        audio.pause();
+
+        playButton.innerText =
+            "▶";
+
+        record.classList.remove(
+            "playing"
+        );
+
+    }
+
+}
+
+
+/* =====================================================
+   NEXT SONG
+===================================================== */
+
+function nextSong(){
+
+    if(!songs.length){
+
+        return;
+
+    }
+
+
+    let next;
+
+
+    if(shuffle){
+
+        next =
             Math.floor(
                 Math.random() *
-                currentQueue.length
+                songs.length
             );
 
     }
 
-    else {
+    else{
 
-        currentIndex =
-            (
-                currentIndex + 1
-            ) %
-            currentQueue.length;
+        next =
+            currentIndex + 1;
+
+        if(
+            next >= songs.length
+        ){
+
+            next = 0;
+
+        }
 
     }
 
 
-    playQueueSong();
+    playSong(next);
 
 }
 
 
-// ------------------------------------------------------
-// PREVIOUS
-// ------------------------------------------------------
+/* =====================================================
+   PREVIOUS SONG
+===================================================== */
 
-function previousSong() {
+function previousSong(){
 
-    if (!currentQueue.length) {
+    if(!songs.length){
 
         return;
 
     }
 
 
-    currentIndex =
-
-        (
-            currentIndex - 1 +
-            currentQueue.length
-        )
-
-        %
-
-        currentQueue.length;
+    let previous =
+        currentIndex - 1;
 
 
-    playQueueSong();
+    if(previous < 0){
+
+        previous =
+            songs.length - 1;
+
+    }
+
+
+    playSong(previous);
 
 }
 
 
-// ------------------------------------------------------
-// PLAY QUEUE SONG
-// ------------------------------------------------------
+/* =====================================================
+   SHUFFLE
+===================================================== */
 
-function playQueueSong() {
+function toggleShuffle(){
 
-    const song =
-        currentQueue[currentIndex];
+    shuffle =
+        !shuffle;
 
-
-    if (!song) {
-
-        return;
-
-    }
-
-
-    if (song.previewUrl) {
-
-        playExternal(
-            song.trackId
-        );
-
-    }
-
-    else {
-
-        playLocal(
-            song.id
-        );
-
-    }
+    alert(
+        shuffle
+        ? "Shuffle ON"
+        : "Shuffle OFF"
+    );
 
 }
 
 
-// ------------------------------------------------------
-// BUTTONS
-// ------------------------------------------------------
+/* =====================================================
+   REPEAT
+===================================================== */
 
-nextButton.addEventListener(
-    "click",
-    nextSong
-);
+function toggleRepeat(){
 
+    repeat =
+        !repeat;
 
-previousButton.addEventListener(
-    "click",
-    previousSong
-);
+    alert(
+        repeat
+        ? "Repeat ON"
+        : "Repeat OFF"
+    );
 
-
-shuffleButton.addEventListener(
-    "click",
-    () => {
-
-        shuffle =
-            !shuffle;
+}
 
 
-        shuffleButton.style.color =
-            shuffle
-            ? "#b7ff43"
-            : "white";
+/* =====================================================
+   AUDIO ENDED
+===================================================== */
 
-    }
-);
+audio.addEventListener(
+    "ended",
+    ()=>{
 
+        if(repeat){
 
-repeatButton.addEventListener(
-    "click",
-    () => {
+            audio.currentTime =
+                0;
 
-        repeat =
-            !repeat;
+            audio.play();
 
+        }
 
-        repeatButton.style.color =
-            repeat
-            ? "#b7ff43"
-            : "white";
+        else{
+
+            nextSong();
+
+        }
 
     }
 );
 
 
-// ------------------------------------------------------
-// AUDIO PROGRESS
-// ------------------------------------------------------
+/* =====================================================
+   PROGRESS
+===================================================== */
 
 audio.addEventListener(
     "timeupdate",
-    () => {
+    ()=>{
 
-        currentTime.textContent =
+        currentTime.innerText =
             formatTime(
                 audio.currentTime
             );
 
 
-        duration.textContent =
+        duration.innerText =
             formatTime(
                 audio.duration
             );
 
 
-        if (
+        if(
             Number.isFinite(
                 audio.duration
             )
-        ) {
+        ){
 
             progress.value =
 
@@ -791,19 +1637,19 @@ audio.addEventListener(
 );
 
 
-// ------------------------------------------------------
-// SEEK
-// ------------------------------------------------------
+/* =====================================================
+   SEEK
+===================================================== */
 
 progress.addEventListener(
     "input",
-    () => {
+    ()=>{
 
-        if (
+        if(
             !Number.isFinite(
                 audio.duration
             )
-        ) {
+        ){
 
             return;
 
@@ -813,8 +1659,7 @@ progress.addEventListener(
         audio.currentTime =
 
             (
-                Number(progress.value) /
-                100
+                progress.value / 100
             )
 
             *
@@ -825,83 +1670,109 @@ progress.addEventListener(
 );
 
 
-// ------------------------------------------------------
-// VOLUME
-// ------------------------------------------------------
+/* =====================================================
+   VOLUME
+===================================================== */
 
 volume.addEventListener(
     "input",
-    () => {
+    ()=>{
 
         audio.volume =
-            Number(volume.value);
+            volume.value;
 
     }
 );
 
 
-audio.volume = 0.8;
+audio.volume =
+    .8;
 
 
-// ------------------------------------------------------
-// SONG FINISHED
-// ------------------------------------------------------
+/* =====================================================
+   FAVORITES
+===================================================== */
 
-audio.addEventListener(
-    "ended",
-    () => {
-
-        if (repeat) {
-
-            audio.currentTime = 0;
-
-            audio.play();
-
-        }
-
-        else {
-
-            nextSong();
-
-        }
-
-    }
-);
-
-
-// ------------------------------------------------------
-// LYRICS
-// ------------------------------------------------------
-
-function showLyrics(songId) {
+function favoriteSong(index){
 
     const song =
-        localQueue.find(
-            item => item.id === songId
-        );
+        songs[index];
 
 
-    if (!song) {
+    if(!song){
 
         return;
 
     }
 
 
+    const id =
+        song.trackId;
+
+
+    if(
+        favorites.includes(id)
+    ){
+
+        favorites =
+            favorites.filter(
+                item => item !== id
+            );
+
+    }
+
+    else{
+
+        favorites.push(id);
+
+    }
+
+
+    localStorage.setItem(
+
+        "gentlebeatsFavorites",
+
+        JSON.stringify(
+            favorites
+        )
+
+    );
+
+
+    displaySongs();
+
+}
+
+
+/* =====================================================
+   LYRICS
+===================================================== */
+
+function showLyrics(){
+
+    if(currentIndex < 0){
+
+        return;
+
+    }
+
+
+    const song =
+        songs[currentIndex];
+
+
     document.getElementById(
         "lyricsTitle"
-    ).textContent =
+    ).innerText =
 
-        `${song.title} — ${song.artist}`;
+        `${song.trackName} — ${song.artistName}`;
 
 
     document.getElementById(
-        "lyricsContent"
-    ).textContent =
+        "lyrics"
+    ).innerText =
 
-        song.lyrics ||
-        "No lyrics available.";
-
+        "Lyrics for this song are not automatically reproduced here. Add lyrics that you own or are licensed to display.";
 
     document.getElementById(
         "lyricsModal"
@@ -912,49 +1783,104 @@ function showLyrics(songId) {
 }
 
 
-document.getElementById(
-    "closeLyrics"
-).addEventListener(
-    "click",
-    () => {
+function closeLyrics(){
 
-        document.getElementById(
-            "lyricsModal"
-        ).classList.add(
-            "hidden"
+    document.getElementById(
+        "lyricsModal"
+    ).classList.add(
+        "hidden"
+    );
+
+}
+
+
+/* =====================================================
+   EXPLORE
+===================================================== */
+
+function exploreMusic(){
+
+    document.getElementById(
+        "discover"
+    ).scrollIntoView({
+        behavior:"smooth"
+    });
+
+
+    searchInput.value =
+        "Drake";
+
+
+    searchMusic();
+
+}
+
+
+/* =====================================================
+   ESCAPE HTML
+===================================================== */
+
+function escapeHTML(value){
+
+    return String(value || "")
+        .replaceAll(
+            "&",
+            "&amp;"
+        )
+        .replaceAll(
+            "<",
+            "&lt;"
+        )
+        .replaceAll(
+            ">",
+            "&gt;"
+        )
+        .replaceAll(
+            '"',
+            "&quot;"
+        )
+        .replaceAll(
+            "'",
+            "&#039;"
         );
 
-    }
-);
+}
 
 
-// ------------------------------------------------------
-// SEARCH
-// ------------------------------------------------------
+/* =====================================================
+   KEYBOARD SHORTCUTS
+===================================================== */
 
-searchButton.addEventListener(
-    "click",
-    () => {
-
-        searchMusic(
-            searchInput.value
-        );
-
-    }
-);
-
-
-searchInput.addEventListener(
+document.addEventListener(
     "keydown",
-    event => {
+    event=>{
 
-        if (
-            event.key === "Enter"
-        ) {
+        if(
+            event.code === "Space" &&
+            event.target.tagName !== "INPUT"
+        ){
 
-            searchMusic(
-                searchInput.value
-            );
+            event.preventDefault();
+
+            togglePlay();
+
+        }
+
+
+        if(
+            event.key === "ArrowRight"
+        ){
+
+            nextSong();
+
+        }
+
+
+        if(
+            event.key === "ArrowLeft"
+        ){
+
+            previousSong();
 
         }
 
@@ -962,55 +1888,16 @@ searchInput.addEventListener(
 );
 
 
-// ------------------------------------------------------
-// EXPLORE
-// ------------------------------------------------------
+/* =====================================================
+   INITIAL SEARCH
+===================================================== */
 
-document.getElementById(
-    "exploreButton"
-).addEventListener(
-    "click",
-    () => {
+searchInput.value =
+    "Drake";
 
-        document.getElementById(
-            "discover"
-        ).scrollIntoView({
-            behavior: "smooth"
-        });
+searchMusic();
 
-        searchInput.value =
-            "Drake";
+</script>
 
-        searchMusic("Drake");
-
-    }
-);
-
-
-// ------------------------------------------------------
-// LIBRARY BUTTON
-// ------------------------------------------------------
-
-document.getElementById(
-    "libraryButton"
-).addEventListener(
-    "click",
-    () => {
-
-        document.getElementById(
-            "library"
-        ).scrollIntoView({
-            behavior: "smooth"
-        });
-
-    }
-);
-
-
-// ------------------------------------------------------
-// INITIALIZE
-// ------------------------------------------------------
-
-loadLocalSongs();
-
-searchMusic("Drake");
+</body>
+</html>
