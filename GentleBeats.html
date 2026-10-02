@@ -1,989 +1,1016 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GentleGiant Music</title>
+// ======================================================
+// GENTLEBEATS MUSIC APPLICATION
+// ======================================================
 
-    <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: Arial, sans-serif;
-        }
 
-        body {
-            background: #0b0b0f;
-            color: white;
-            min-height: 100vh;
-        }
+// ------------------------------------------------------
+// DOM
+// ------------------------------------------------------
 
-        header {
-            height: 70px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 35px;
-            background: #111117;
-            border-bottom: 1px solid #272731;
-        }
+const audio =
+    document.getElementById("audio");
 
-        .logo {
-            font-size: 24px;
-            font-weight: bold;
-        }
+const searchInput =
+    document.getElementById("searchInput");
 
-        .logo span {
-            color: #1db954;
-        }
+const searchButton =
+    document.getElementById("searchButton");
 
-        .search {
-            width: 420px;
-            background: #22222b;
-            border: none;
-            outline: none;
-            border-radius: 30px;
-            padding: 13px 20px;
-            color: white;
-            font-size: 15px;
-        }
+const searchResults =
+    document.getElementById("searchResults");
 
-        main {
-            padding: 35px;
-            padding-bottom: 160px;
-        }
+const localSongs =
+    document.getElementById("localSongs");
 
-        h1 {
-            margin-bottom: 10px;
-        }
+const searchStatus =
+    document.getElementById("searchStatus");
 
-        .subtitle {
-            color: #999;
-            margin-bottom: 30px;
-        }
+const playButton =
+    document.getElementById("playButton");
 
-        .results {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
-            gap: 22px;
-        }
+const previousButton =
+    document.getElementById("previousButton");
 
-        .song {
-            background: #15151c;
-            border-radius: 12px;
-            overflow: hidden;
-            transition: .2s;
-            cursor: pointer;
-        }
+const nextButton =
+    document.getElementById("nextButton");
 
-        .song:hover {
-            transform: translateY(-4px);
-            background: #1d1d26;
-        }
+const shuffleButton =
+    document.getElementById("shuffleButton");
 
-        .thumbnail {
-            width: 100%;
-            aspect-ratio: 16 / 9;
-            object-fit: cover;
-        }
+const repeatButton =
+    document.getElementById("repeatButton");
 
-        .song-info {
-            padding: 15px;
-        }
+const progress =
+    document.getElementById("progress");
 
-        .song-title {
-            font-weight: bold;
-            margin-bottom: 7px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
+const currentTime =
+    document.getElementById("currentTime");
 
-        .artist {
-            color: #999;
-            font-size: 14px;
-            margin-bottom: 14px;
-        }
+const duration =
+    document.getElementById("duration");
 
-        .buttons {
-            display: flex;
-            gap: 7px;
-        }
+const volume =
+    document.getElementById("volume");
 
-        button {
-            border: none;
-            cursor: pointer;
-        }
+const playerTitle =
+    document.getElementById("playerTitle");
 
-        .play-btn {
-            background: #1db954;
-            color: black;
-            padding: 8px 14px;
-            border-radius: 20px;
-            font-weight: bold;
-        }
+const playerArtist =
+    document.getElementById("playerArtist");
 
-        .lyrics-btn,
-        .video-btn {
-            background: #292932;
-            color: white;
-            padding: 8px 12px;
-            border-radius: 20px;
-        }
+const playerCover =
+    document.getElementById("playerCover");
 
-        .player {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            height: 125px;
-            background: #121217;
-            border-top: 1px solid #292932;
-            display: flex;
-            align-items: center;
-            gap: 20px;
-            padding: 15px 25px;
-            z-index: 20;
-        }
 
-        .now-playing {
-            width: 250px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
+// ------------------------------------------------------
+// STATE
+// ------------------------------------------------------
 
-        .now-playing img {
-            width: 65px;
-            height: 65px;
-            object-fit: cover;
-            border-radius: 6px;
-        }
+let localQueue = [];
 
-        .now-title {
-            font-weight: bold;
-        }
+let externalQueue = [];
 
-        .now-artist {
-            color: #999;
-            font-size: 13px;
-            margin-top: 5px;
-        }
+let currentQueue = [];
 
-        .controls {
-            display: flex;
-            align-items: center;
-            gap: 18px;
-        }
+let currentIndex = -1;
 
-        .control {
-            background: transparent;
-            color: white;
-            font-size: 24px;
-        }
+let shuffle = false;
 
-        .main-play {
-            background: white;
-            color: black;
-            width: 45px;
-            height: 45px;
-            border-radius: 50%;
-            font-size: 20px;
-        }
+let repeat = false;
 
-        .progress-container {
-            flex: 1;
-        }
 
-        .progress {
-            width: 100%;
-            accent-color: #1db954;
-            cursor: pointer;
-        }
+// ------------------------------------------------------
+// FORMAT TIME
+// ------------------------------------------------------
 
-        .time {
-            display: flex;
-            justify-content: space-between;
-            color: #888;
-            font-size: 12px;
-        }
+function formatTime(seconds) {
 
-        #youtube-player {
-            display: none;
-        }
+    if (!Number.isFinite(seconds)) {
 
-        .empty {
-            color: #777;
-            text-align: center;
-            margin-top: 60px;
-            grid-column: 1 / -1;
-        }
+        return "0:00";
 
-        @media(max-width: 800px) {
-            .search {
-                width: 250px;
-            }
+    }
 
-            .now-playing {
-                width: 180px;
-            }
-        }
-    </style>
-</head>
+    const minutes =
+        Math.floor(seconds / 60);
 
-<body>
+    const secs =
+        Math.floor(seconds % 60);
 
-<header>
-    <div class="logo">
-        GG<span>Music</span>
-    </div>
+    return (
+        minutes +
+        ":" +
+        String(secs).padStart(2, "0")
+    );
+}
 
-    <input
-        id="search"
-        class="search"
-        placeholder="Search songs, artists..."
-        autocomplete="off"
-    >
-</header>
 
-<main>
-    <h1>Discover Music</h1>
-    <p class="subtitle">
-        Search real music videos and play them directly in the app.
-    </p>
+// ------------------------------------------------------
+// ESCAPE HTML
+// ------------------------------------------------------
 
-    <div id="results" class="results"></div>
-</main>
+function escapeHTML(value) {
 
-<div id="youtube-player"></div>
+    return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+}
 
-<div class="player">
 
-    <div class="now-playing">
+// ------------------------------------------------------
+// LOCAL SONG CARD
+// ------------------------------------------------------
 
-        <img id="now-image"
-             src="https://i.ytimg.com/vi/8ekJMC8OtGU/hqdefault.jpg">
+function createLocalCard(song) {
 
-        <div>
-            <div id="now-title" class="now-title">
-                Select a song
+    return `
+
+        <article class="music-card">
+
+            <img
+                class="cover"
+                src="${escapeHTML(
+                    song.cover ||
+                    "/assets/gentle-default.svg"
+                )}"
+                alt="Album cover"
+            >
+
+            <div class="song-title">
+                ${escapeHTML(song.title)}
             </div>
 
-            <div id="now-artist" class="now-artist">
-                Nothing playing
+            <div class="song-artist">
+                ${escapeHTML(song.artist)}
             </div>
-        </div>
 
-    </div>
+            <div class="song-album">
+                ${escapeHTML(song.album || song.genre || "")}
+            </div>
 
-    <div class="controls">
+            <div class="card-buttons">
 
-        <button class="control" onclick="previousSong()">
-            ⏮
-        </button>
+                <button
+                    onclick="playLocal(${song.id})"
+                >
+                    ▶ Play
+                </button>
 
-        <button id="playPause"
-                class="main-play"
-                onclick="togglePlay()">
-            ▶
-        </button>
+                <button
+                    onclick="showLyrics(${song.id})"
+                >
+                    Lyrics
+                </button>
 
-        <button class="control" onclick="nextSong()">
-            ⏭
-        </button>
+                ${
+                    song.downloadable
+                    ?
 
-    </div>
+                    `<a
+                        class="download"
+                        href="/download/${encodeURIComponent(
+                            song.audio.split("/").pop()
+                        )}"
+                        download
+                    >
+                        <button>
+                            ↓
+                        </button>
+                    </a>`
 
-    <div class="progress-container">
+                    :
 
-        <input
-            id="progress"
-            class="progress"
-            type="range"
-            min="0"
-            max="100"
-            value="0"
-        >
-
-        <div class="time">
-            <span id="currentTime">0:00</span>
-            <span id="duration">0:00</span>
-        </div>
-
-    </div>
-
-</div>
-
-
-<script src="https://www.youtube.com/iframe_api"></script>
-
-<script>
-
-    /*
-       ============================================
-       PUT YOUR YOUTUBE DATA API KEY HERE
-       ============================================
-    */
-
-    const API_KEY = "YOUR_YOUTUBE_API_KEY";
-
-
-    let player;
-
-    let songs = [];
-
-    let currentIndex = -1;
-
-    let isReady = false;
-
-
-    /*
-       ============================================
-       YOUTUBE PLAYER
-       ============================================
-    */
-
-    function onYouTubeIframeAPIReady() {
-
-        player = new YT.Player("youtube-player", {
-
-            height: "0",
-
-            width: "0",
-
-            videoId: "",
-
-            playerVars: {
-
-                autoplay: 0,
-
-                controls: 0,
-
-                rel: 0
-
-            },
-
-            events: {
-
-                onReady: function () {
-
-                    isReady = true;
-
-                },
-
-                onStateChange: function(event) {
-
-                    if (
-                        event.data ===
-                        YT.PlayerState.PLAYING
-                    ) {
-
-                        document.getElementById(
-                            "playPause"
-                        ).innerText = "⏸";
-
-                    }
-
-                    if (
-                        event.data ===
-                        YT.PlayerState.PAUSED
-                    ) {
-
-                        document.getElementById(
-                            "playPause"
-                        ).innerText = "▶";
-
-                    }
-
-                    if (
-                        event.data ===
-                        YT.PlayerState.ENDED
-                    ) {
-
-                        nextSong();
-
-                    }
-
+                    ""
                 }
 
-            }
+            </div>
 
-        });
+        </article>
+
+    `;
+}
+
+
+// ------------------------------------------------------
+// EXTERNAL SONG CARD
+// ------------------------------------------------------
+
+function createExternalCard(song) {
+
+    const cover =
+        song.artworkUrl100 ||
+        "/assets/gentle-default.svg";
+
+    const title =
+        song.trackName ||
+        "Unknown title";
+
+    const artist =
+        song.artistName ||
+        "Unknown artist";
+
+    const album =
+        song.collectionName ||
+        "";
+
+
+    return `
+
+        <article class="music-card">
+
+            <img
+                class="cover"
+                src="${escapeHTML(cover)}"
+                alt="Album artwork"
+            >
+
+            <div class="song-title">
+                ${escapeHTML(title)}
+            </div>
+
+            <div class="song-artist">
+                ${escapeHTML(artist)}
+            </div>
+
+            <div class="song-album">
+                ${escapeHTML(album)}
+            </div>
+
+            <div class="card-buttons">
+
+                ${
+                    song.previewUrl
+
+                    ?
+
+                    `<button
+                        onclick="playExternal(${song.trackId})"
+                    >
+                        ▶ Preview
+                    </button>`
+
+                    :
+
+                    `<button disabled>
+                        No preview
+                    </button>`
+                }
+
+                <a
+                    class="download"
+                    href="${escapeHTML(
+                        song.trackViewUrl || "#"
+                    )}"
+                    target="_blank"
+                >
+
+                    <button>
+                        Open
+                    </button>
+
+                </a>
+
+            </div>
+
+        </article>
+
+    `;
+}
+
+
+// ------------------------------------------------------
+// LOAD LOCAL SONGS
+// ------------------------------------------------------
+
+async function loadLocalSongs(query = "") {
+
+    try {
+
+        const response =
+            await fetch(
+                `/api/songs?q=${encodeURIComponent(query)}`
+            );
+
+        if (!response.ok) {
+
+            throw new Error(
+                "Unable to load local songs"
+            );
+
+        }
+
+        localQueue =
+            await response.json();
+
+        localSongs.innerHTML =
+            localQueue.length
+
+            ?
+
+            localQueue
+                .map(createLocalCard)
+                .join("")
+
+            :
+
+            `
+                <p>
+                    No songs in your catalogue yet.
+                </p>
+            `;
+
+    }
+
+    catch (error) {
+
+        console.error(error);
+
+        localSongs.innerHTML = `
+            <p>
+                Could not load your GentleBeats
+                catalogue.
+            </p>
+        `;
+
+    }
+}
+
+
+// ------------------------------------------------------
+// SEARCH REAL MUSIC METADATA
+// ------------------------------------------------------
+
+async function searchMusic(query) {
+
+    if (!query.trim()) {
+
+        return;
 
     }
 
 
-    /*
-       ============================================
-       SEARCH YOUTUBE
-       ============================================
-    */
-
-    const searchBox =
-        document.getElementById("search");
+    searchStatus.textContent =
+        "Searching...";
 
 
-    searchBox.addEventListener(
-        "keydown",
-        function(event) {
+    try {
 
-            if (event.key === "Enter") {
+        const response =
 
-                searchYouTube(
-                    searchBox.value.trim()
-                );
+            await fetch(
 
-            }
+                "https://itunes.apple.com/search?" +
+
+                new URLSearchParams({
+
+                    term: query,
+
+                    media: "music",
+
+                    entity: "song",
+
+                    limit: "30"
+
+                })
+
+            );
+
+
+        if (!response.ok) {
+
+            throw new Error(
+                "Music search failed"
+            );
 
         }
-    );
 
 
-    async function searchYouTube(query) {
-
-        if (!query) return;
-
-
-        const results =
-            document.getElementById("results");
+        const data =
+            await response.json();
 
 
-        results.innerHTML = `
-            <div class="empty">
-                Searching YouTube...
-            </div>
+        externalQueue =
+            data.results.filter(
+                song => song.previewUrl
+            );
+
+
+        searchResults.innerHTML =
+
+            externalQueue.length
+
+            ?
+
+            externalQueue
+                .map(createExternalCard)
+                .join("")
+
+            :
+
+            `
+                <p>
+                    No playable previews found.
+                </p>
+            `;
+
+
+        searchStatus.textContent =
+            `${data.resultCount} results`;
+
+    }
+
+    catch (error) {
+
+        console.error(error);
+
+        searchStatus.textContent =
+            "Search unavailable";
+
+        searchResults.innerHTML = `
+            <p>
+                The music catalogue could not
+                be reached right now.
+            </p>
         `;
 
+    }
 
-        /*
-           Search for music videos.
-        */
-
-        const url =
-            "https://www.googleapis.com/youtube/v3/search?" +
-
-            new URLSearchParams({
-
-                part: "snippet",
-
-                q: query + " official audio",
-
-                type: "video",
-
-                videoCategoryId: "10",
-
-                maxResults: 24,
-
-                key: API_KEY
-
-            });
+}
 
 
-        try {
+// ------------------------------------------------------
+// PLAY LOCAL SONG
+// ------------------------------------------------------
 
-            const response =
-                await fetch(url);
+function playLocal(songId) {
 
+    currentQueue =
+        localQueue;
 
-            const data =
-                await response.json();
-
-
-            if (!data.items) {
-
-                throw new Error(
-                    data.error?.message ||
-                    "Search failed"
-                );
-
-            }
+    currentIndex =
+        localQueue.findIndex(
+            song => song.id === songId
+        );
 
 
-            songs =
-                data.items.map(item => ({
+    if (currentIndex === -1) {
 
-                    id:
-                        item.id.videoId,
+        return;
 
-                    title:
-                        item.snippet.title,
-
-                    channel:
-                        item.snippet.channelTitle,
-
-                    image:
-                        item.snippet.thumbnails
-                            .high.url
-
-                }));
+    }
 
 
-            displaySongs();
+    const song =
+        localQueue[currentIndex];
 
-        }
 
-        catch(error) {
+    audio.src =
+        song.audio;
+
+
+    playerTitle.textContent =
+        song.title;
+
+
+    playerArtist.textContent =
+        song.artist;
+
+
+    playerCover.src =
+        song.cover ||
+        "/assets/gentle-default.svg";
+
+
+    audio.play()
+        .then(() => {
+
+            playButton.textContent =
+                "Ⅱ";
+
+        })
+        .catch(error => {
 
             console.error(error);
 
+        });
 
-            results.innerHTML = `
-                <div class="empty">
+}
 
-                    Search failed.
 
-                    <br><br>
+// ------------------------------------------------------
+// PLAY EXTERNAL PREVIEW
+// ------------------------------------------------------
 
-                    Make sure your YouTube API
-                    key is correctly configured.
+function playExternal(trackId) {
 
-                    <br><br>
+    currentQueue =
+        externalQueue;
 
-                    ${error.message}
 
-                </div>
-            `;
+    currentIndex =
+        externalQueue.findIndex(
+            song => song.trackId === trackId
+        );
 
-        }
+
+    if (currentIndex === -1) {
+
+        return;
 
     }
 
 
-    /*
-       ============================================
-       DISPLAY RESULTS
-       ============================================
-    */
-
-    function displaySongs() {
-
-        const results =
-            document.getElementById("results");
+    const song =
+        externalQueue[currentIndex];
 
 
-        results.innerHTML = "";
+    audio.src =
+        song.previewUrl;
 
 
-        if (!songs.length) {
-
-            results.innerHTML = `
-                <div class="empty">
-                    No songs found.
-                </div>
-            `;
-
-            return;
-
-        }
+    playerTitle.textContent =
+        song.trackName;
 
 
-        songs.forEach((song, index) => {
-
-            const card =
-                document.createElement("div");
+    playerArtist.textContent =
+        song.artistName;
 
 
-            card.className = "song";
+    playerCover.src =
+        song.artworkUrl100 ||
+        "/assets/gentle-default.svg";
 
 
-            card.innerHTML = `
+    audio.play()
+        .then(() => {
 
-                <img
-                    class="thumbnail"
-                    src="${song.image}"
-                    alt=""
-                >
+            playButton.textContent =
+                "Ⅱ";
 
-                <div class="song-info">
+        })
+        .catch(error => {
 
-                    <div class="song-title">
-                        ${escapeHTML(song.title)}
-                    </div>
-
-                    <div class="artist">
-                        ${escapeHTML(song.channel)}
-                    </div>
-
-                    <div class="buttons">
-
-                        <button
-                            class="play-btn"
-                            onclick="playSong(${index})"
-                        >
-                            ▶ Play
-                        </button>
-
-                        <button
-                            class="lyrics-btn"
-                            onclick="openLyrics(${index})"
-                        >
-                            Lyrics
-                        </button>
-
-                        <button
-                            class="video-btn"
-                            onclick="openVideo(${index})"
-                        >
-                            Video
-                        </button>
-
-                    </div>
-
-                </div>
-            `;
-
-
-            results.appendChild(card);
+            console.error(error);
 
         });
 
-    }
+}
 
 
-    /*
-       ============================================
-       PLAY SONG
-       ============================================
-    */
+// ------------------------------------------------------
+// PLAY / PAUSE
+// ------------------------------------------------------
 
-    function playSong(index) {
+playButton.addEventListener(
+    "click",
+    () => {
 
-        if (!isReady) {
-
-            alert(
-                "Music player is still loading..."
-            );
+        if (!audio.src) {
 
             return;
 
         }
 
 
-        if (!songs[index]) return;
+        if (audio.paused) {
 
+            audio.play();
 
-        currentIndex = index;
-
-
-        const song = songs[index];
-
-
-        player.loadVideoById(song.id);
-
-
-        document.getElementById(
-            "now-title"
-        ).innerText = cleanTitle(song.title);
-
-
-        document.getElementById(
-            "now-artist"
-        ).innerText = song.channel;
-
-
-        document.getElementById(
-            "now-image"
-        ).src = song.image;
-
-
-        document.getElementById(
-            "playPause"
-        ).innerText = "⏸";
-
-    }
-
-
-    /*
-       ============================================
-       PLAY / PAUSE
-       ============================================
-    */
-
-    function togglePlay() {
-
-        if (!player) return;
-
-
-        const state =
-            player.getPlayerState();
-
-
-        if (
-            state ===
-            YT.PlayerState.PLAYING
-        ) {
-
-            player.pauseVideo();
+            playButton.textContent =
+                "Ⅱ";
 
         }
 
         else {
 
-            player.playVideo();
+            audio.pause();
+
+            playButton.textContent =
+                "▶";
 
         }
 
     }
+);
 
 
-    /*
-       ============================================
-       NEXT
-       ============================================
-    */
+// ------------------------------------------------------
+// NEXT
+// ------------------------------------------------------
 
-    function nextSong() {
+function nextSong() {
 
-        if (!songs.length) return;
+    if (!currentQueue.length) {
 
-
-        let next =
-            currentIndex + 1;
-
-
-        if (next >= songs.length) {
-
-            next = 0;
-
-        }
-
-
-        playSong(next);
+        return;
 
     }
 
 
-    /*
-       ============================================
-       PREVIOUS
-       ============================================
-    */
+    if (shuffle) {
 
-    function previousSong() {
+        currentIndex =
+            Math.floor(
+                Math.random() *
+                currentQueue.length
+            );
 
-        if (!songs.length) return;
+    }
 
+    else {
 
-        let previous =
-            currentIndex - 1;
-
-
-        if (previous < 0) {
-
-            previous =
-                songs.length - 1;
-
-        }
-
-
-        playSong(previous);
+        currentIndex =
+            (
+                currentIndex + 1
+            ) %
+            currentQueue.length;
 
     }
 
 
-    /*
-       ============================================
-       PROGRESS BAR
-       ============================================
-    */
+    playQueueSong();
 
-    setInterval(function() {
+}
+
+
+// ------------------------------------------------------
+// PREVIOUS
+// ------------------------------------------------------
+
+function previousSong() {
+
+    if (!currentQueue.length) {
+
+        return;
+
+    }
+
+
+    currentIndex =
+
+        (
+            currentIndex - 1 +
+            currentQueue.length
+        )
+
+        %
+
+        currentQueue.length;
+
+
+    playQueueSong();
+
+}
+
+
+// ------------------------------------------------------
+// PLAY QUEUE SONG
+// ------------------------------------------------------
+
+function playQueueSong() {
+
+    const song =
+        currentQueue[currentIndex];
+
+
+    if (!song) {
+
+        return;
+
+    }
+
+
+    if (song.previewUrl) {
+
+        playExternal(
+            song.trackId
+        );
+
+    }
+
+    else {
+
+        playLocal(
+            song.id
+        );
+
+    }
+
+}
+
+
+// ------------------------------------------------------
+// BUTTONS
+// ------------------------------------------------------
+
+nextButton.addEventListener(
+    "click",
+    nextSong
+);
+
+
+previousButton.addEventListener(
+    "click",
+    previousSong
+);
+
+
+shuffleButton.addEventListener(
+    "click",
+    () => {
+
+        shuffle =
+            !shuffle;
+
+
+        shuffleButton.style.color =
+            shuffle
+            ? "#b7ff43"
+            : "white";
+
+    }
+);
+
+
+repeatButton.addEventListener(
+    "click",
+    () => {
+
+        repeat =
+            !repeat;
+
+
+        repeatButton.style.color =
+            repeat
+            ? "#b7ff43"
+            : "white";
+
+    }
+);
+
+
+// ------------------------------------------------------
+// AUDIO PROGRESS
+// ------------------------------------------------------
+
+audio.addEventListener(
+    "timeupdate",
+    () => {
+
+        currentTime.textContent =
+            formatTime(
+                audio.currentTime
+            );
+
+
+        duration.textContent =
+            formatTime(
+                audio.duration
+            );
+
 
         if (
-            !player ||
-            !isReady ||
-            currentIndex < 0
-        ) return;
+            Number.isFinite(
+                audio.duration
+            )
+        ) {
+
+            progress.value =
+
+                (
+                    audio.currentTime /
+                    audio.duration
+                ) * 100;
+
+        }
+
+    }
+);
 
 
-        const current =
-            player.getCurrentTime();
+// ------------------------------------------------------
+// SEEK
+// ------------------------------------------------------
+
+progress.addEventListener(
+    "input",
+    () => {
+
+        if (
+            !Number.isFinite(
+                audio.duration
+            )
+        ) {
+
+            return;
+
+        }
 
 
-        const duration =
-            player.getDuration();
+        audio.currentTime =
+
+            (
+                Number(progress.value) /
+                100
+            )
+
+            *
+
+            audio.duration;
+
+    }
+);
 
 
-        if (!duration) return;
+// ------------------------------------------------------
+// VOLUME
+// ------------------------------------------------------
+
+volume.addEventListener(
+    "input",
+    () => {
+
+        audio.volume =
+            Number(volume.value);
+
+    }
+);
 
 
-        const percentage =
-            (current / duration) * 100;
+audio.volume = 0.8;
 
 
-        document.getElementById(
-            "progress"
-        ).value = percentage;
+// ------------------------------------------------------
+// SONG FINISHED
+// ------------------------------------------------------
+
+audio.addEventListener(
+    "ended",
+    () => {
+
+        if (repeat) {
+
+            audio.currentTime = 0;
+
+            audio.play();
+
+        }
+
+        else {
+
+            nextSong();
+
+        }
+
+    }
+);
 
 
-        document.getElementById(
-            "currentTime"
-        ).innerText =
-            formatTime(current);
+// ------------------------------------------------------
+// LYRICS
+// ------------------------------------------------------
+
+function showLyrics(songId) {
+
+    const song =
+        localQueue.find(
+            item => item.id === songId
+        );
 
 
-        document.getElementById(
-            "duration"
-        ).innerText =
-            formatTime(duration);
+    if (!song) {
 
-    }, 500);
+        return;
+
+    }
 
 
     document.getElementById(
-        "progress"
-    ).addEventListener(
-        "input",
-        function() {
+        "lyricsTitle"
+    ).textContent =
 
-            if (!player) return;
+        `${song.title} — ${song.artist}`;
 
 
-            const duration =
-                player.getDuration();
+    document.getElementById(
+        "lyricsContent"
+    ).textContent =
+
+        song.lyrics ||
+        "No lyrics available.";
 
 
-            const time =
-                (this.value / 100) *
-                duration;
-
-
-            player.seekTo(
-                time,
-                true
-            );
-
-        }
+    document.getElementById(
+        "lyricsModal"
+    ).classList.remove(
+        "hidden"
     );
 
-
-    /*
-       ============================================
-       LYRICS
-       ============================================
-    */
-
-    function openLyrics(index) {
-
-        const song =
-            songs[index];
+}
 
 
-        const query =
-            encodeURIComponent(
-                cleanTitle(song.title) +
-                " " +
-                song.channel +
-                " lyrics"
-            );
+document.getElementById(
+    "closeLyrics"
+).addEventListener(
+    "click",
+    () => {
 
-
-        window.open(
-            "https://www.google.com/search?q=" +
-            query,
-            "_blank"
+        document.getElementById(
+            "lyricsModal"
+        ).classList.add(
+            "hidden"
         );
 
     }
+);
 
 
-    /*
-       ============================================
-       VIDEO
-       ============================================
-    */
+// ------------------------------------------------------
+// SEARCH
+// ------------------------------------------------------
 
-    function openVideo(index) {
+searchButton.addEventListener(
+    "click",
+    () => {
 
-        const song =
-            songs[index];
-
-
-        window.open(
-            "https://www.youtube.com/watch?v=" +
-            song.id,
-            "_blank"
+        searchMusic(
+            searchInput.value
         );
 
     }
+);
 
 
-    /*
-       ============================================
-       HELPERS
-       ============================================
-    */
+searchInput.addEventListener(
+    "keydown",
+    event => {
 
-    function formatTime(seconds) {
+        if (
+            event.key === "Enter"
+        ) {
 
-        seconds =
-            Math.floor(seconds || 0);
-
-
-        const minutes =
-            Math.floor(seconds / 60);
-
-
-        const remaining =
-            seconds % 60;
-
-
-        return minutes +
-            ":" +
-            String(remaining)
-                .padStart(2, "0");
-
-    }
-
-
-    function cleanTitle(title) {
-
-        return title
-            .replace(
-                /\(.*?\)/g,
-                ""
-            )
-            .replace(
-                /\[.*?\]/g,
-                ""
-            )
-            .trim();
-
-    }
-
-
-    function escapeHTML(value) {
-
-        const div =
-            document.createElement("div");
-
-
-        div.textContent =
-            value;
-
-
-        return div.innerHTML;
-
-    }
-
-
-    /*
-       ============================================
-       INITIAL SEARCH
-       ============================================
-    */
-
-    window.addEventListener(
-        "load",
-        function() {
-
-            searchYouTube("Drake");
+            searchMusic(
+                searchInput.value
+            );
 
         }
-    );
 
-</script>
+    }
+);
 
-</body>
-</html>
+
+// ------------------------------------------------------
+// EXPLORE
+// ------------------------------------------------------
+
+document.getElementById(
+    "exploreButton"
+).addEventListener(
+    "click",
+    () => {
+
+        document.getElementById(
+            "discover"
+        ).scrollIntoView({
+            behavior: "smooth"
+        });
+
+        searchInput.value =
+            "Drake";
+
+        searchMusic("Drake");
+
+    }
+);
+
+
+// ------------------------------------------------------
+// LIBRARY BUTTON
+// ------------------------------------------------------
+
+document.getElementById(
+    "libraryButton"
+).addEventListener(
+    "click",
+    () => {
+
+        document.getElementById(
+            "library"
+        ).scrollIntoView({
+            behavior: "smooth"
+        });
+
+    }
+);
+
+
+// ------------------------------------------------------
+// INITIALIZE
+// ------------------------------------------------------
+
+loadLocalSongs();
+
+searchMusic("Drake");
